@@ -108,3 +108,31 @@
 - Header validation is now performed twice by default path (`MercadonaScraper` and `MercadonaHttpClient`); functionally safe but redundant.
 - Added a default-wiring integration test (no custom deps) using spies over helper module boundaries to prove constructor defaults call real helper contracts.
 - HTTP reliability behavior (retry/timeout) remains encapsulated in `MercadonaHttpClient`, not scraper orchestration.
+
+---
+
+## PR3 Progress — cleanup/hardening
+
+### Scope / PR Boundary
+- Active slice: **PR3 only** (cleanup/hardening on top of PR2 integration).
+- No new architecture changes; no cross-scraper refactors.
+
+### Completed Tasks
+- Removed redundant header validation from `MercadonaScraper` orchestration and delegated validation responsibility to `MercadonaHttpClient`.
+- Updated integration tests to reflect cleanup behavior while preserving core PR2 assertions (no BrowserManager usage, wh forwarding, mapper output, error propagation, default wiring).
+
+### Files Changed (PR3)
+- `backend/src/scrapers/implementations/MercadonaScraper.ts`
+- `backend/src/scrapers/implementations/MercadonaScraper.unit.test.ts`
+- `openspec/changes/us03-mercadona-http-api-optimization/apply-progress.md`
+
+### Test Commands Run (PR3)
+- `cd backend && pnpm test src/scrapers/implementations/MercadonaScraper.unit.test.ts`
+- `cd backend && pnpm test`
+
+### Result
+- Targeted Mercadona integration tests: **pass** (`1 file, 6 tests`).
+- Full backend suite: **pass** (`9 files, 30 tests`).
+
+### PR3 Notes
+- This cleanup removes duplication without changing endpoint, payload, wh resolution, retry behavior, or mapping contracts.
