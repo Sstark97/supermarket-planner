@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test:unit": "vitest run src", 
+    "test:unit": "vitest run src",
     "test:integration": "vitest run src/**/*.integration.test.ts",
     "test:e2e": "playwright test tests/e2e/",
     "test": "vitest run"
@@ -28,6 +28,9 @@
     "express": "^4.21.2",
     "node-cron": "^4.2.1",
     "playwright": "^1.50.1",
+    "playwright-extra": "^4.3.6",
+    "playwright-extra-plugin-stealth": "^0.0.1",
+    "user-agents": "^2.1.70",
     "uuid": "^11.0.5",
     "winston": "^3.17.0",
     "zod": "^3.24.1"
