@@ -1,87 +1,150 @@
-import type { IProduct } from "../../interfaces/IProduct";
-import { config } from "../../config";
-import { logger } from "../../utils/logger";
-import { ScraperBase } from "../base/ScraperBase";
-import { MercadonaHttpClient } from "../mercadona/MercadonaHttpClient";
-import {
-	buildMercadonaHeaders,
-	validateMercadonaHeaders,
-	type MercadonaHeaders,
-} from "../mercadona/MercadonaHeaders";
-import { mapMercadonaProducts } from "../mercadona/MercadonaMapper";
-import { resolveMercadonaWarehouse } from "../mercadona/MercadonaWarehouseResolver";
-import type {
-	MercadonaApiProduct,
-	MercadonaSearchRequest,
-	MercadonaSearchResponse,
-} from "../mercadona/types";
-
-interface MercadonaScraperDeps {
-	buildHeaders?: () => MercadonaHeaders;
-	validateHeaders?: (headers: MercadonaHeaders) => void;
-	resolveWarehouse?: (postalCode: string) => string;
-	searchClient?: (
-		request: MercadonaSearchRequest,
-		headers: MercadonaHeaders,
-	) => Promise<MercadonaSearchResponse>;
-	mapProducts?: (products: MercadonaApiProduct[]) => Promise<IProduct[]>;
-}
+import { ScraperBase } from '../base/ScraperBase';
+import { IProduct } from '../../interfaces/IProduct';
+import { BrowserManager } from '../strategies/BrowserManager';
+import { getRandomUserAgent, randomDelay } from '../strategies/StealthHelper';
+import { normalizePricePerUnit, detectTaxType } from '../../utils/PriceNormalizer';
+import { categorize } from '../../utils/ProductCategorizer';
+import { logger } from '../../utils/logger';
+import { config } from '../../config';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Mercadona Scraper — direct HTTP transport implementation.
+ * Mercadona Scraper — SPA (React/Next.js) that requires postal code injection.
  *
- * Standard flow:
- *  1. Build + validate mandatory Mercadona headers
- *  2. Resolve Las Palmas warehouse id (`wh`)
- *  3. Perform HTTP API search through Mercadona client
- *  4. Map API products to domain IProduct
+ * Strategy:
+ *  1. Intercept the internal search API (api2.mercadona.es) via page.route.
+ *  2. If the CP modal appears, inject it programmatically.
+ *  3. Parse the internal JSON response — far more reliable than DOM scraping on an SPA.
  */
 export class MercadonaScraper extends ScraperBase {
-	readonly name = "Mercadona";
-	private readonly postalCode = config.postalCode;
-	private readonly buildHeaders: () => MercadonaHeaders;
-	private readonly validateHeaders: (headers: MercadonaHeaders) => void;
-	private readonly resolveWarehouse: (postalCode: string) => string;
-	private readonly searchClient: (
-		request: MercadonaSearchRequest,
-		headers: MercadonaHeaders,
-	) => Promise<MercadonaSearchResponse>;
-	private readonly mapProducts: (
-		products: MercadonaApiProduct[],
-	) => Promise<IProduct[]>;
+    readonly name = 'Mercadona';
+    private readonly postalCode = config.postalCode; // 35010
 
-	constructor(
-		circuitBreakerThreshold = config.circuitBreakerThreshold,
-		deps: MercadonaScraperDeps = {},
-	) {
-		super(circuitBreakerThreshold);
+    protected async scrape(query: string): Promise<IProduct[]> {
+        const ua = getRandomUserAgent();
+        const context = await BrowserManager.getInstance().getContext(ua);
 
-		const httpClient = new MercadonaHttpClient();
+        // Inject postal code into localStorage before navigation
+        await context.addInitScript((cp) => {
+            try {
+                localStorage.setItem('postal_code', cp);
+                localStorage.setItem('wh', '3544'); // Specific warehouse for 35010
+            } catch (_) { /* ignore in sandboxed env */ }
+        }, this.postalCode);
 
-		this.buildHeaders = deps.buildHeaders ?? buildMercadonaHeaders;
-		this.validateHeaders = deps.validateHeaders ?? validateMercadonaHeaders;
-		this.resolveWarehouse = deps.resolveWarehouse ?? resolveMercadonaWarehouse;
-		this.searchClient =
-			deps.searchClient ??
-			((request, headers) => httpClient.search(request, headers));
-		this.mapProducts = deps.mapProducts ?? mapMercadonaProducts;
-	}
+        const page = await context.newPage();
+        const collectedProducts: IProduct[] = [];
 
-	protected async scrape(query: string): Promise<IProduct[]> {
-		logger.info(`[Mercadona] Searching API for query: ${query}`);
+        try {
+            logger.info(`[Mercadona] Intercepting Search API...`);
+            let apiResolved = false;
+            await page.route('**/api2.mercadona.es/api/search**', async (route) => {
+                const response = await route.fetch();
+                const json = await response.json().catch(() => null);
+                if (json?.results) {
+                    const parsed = await Promise.all(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (json.results as any[]).map(async (item: any) => {
+                            const priceStr = String(item.price_instructions?.unit_price ?? item.price_instructions?.bulk_price ?? 0);
+                            const unitStr = item.price_instructions?.unit_size
+                                ? `${item.price_instructions.unit_size} ${item.price_instructions.size_format}`
+                                : '1 ud';
+                            const normalized = normalizePricePerUnit(priceStr, unitStr);
+                            const category = await categorize(item.display_name ?? '');
+                            return {
+                                id: uuidv4(),
+                                name: item.display_name ?? '',
+                                supermarket: this.name,
+                                category,
+                                price: normalized.price,
+                                pricePerUnit: normalized.pricePerUnit,
+                                unit: normalized.unit,
+                                image: item.thumbnail ?? undefined,
+                                url: `https://tienda.mercadona.es/product/${item.id}`,
+                                taxType: detectTaxType('IGIC'), // Canarias
+                                scrapedAt: new Date().toISOString(),
+                            } satisfies IProduct;
+                        }),
+                    );
+                    collectedProducts.push(...parsed);
+                    apiResolved = true;
+                }
+                await route.fulfill({ response });
+            });
 
-		const headers = this.buildHeaders();
-		this.validateHeaders(headers);
+            logger.info(`[Mercadona] Going to home for CP injection...`);
+            await page.goto('https://tienda.mercadona.es', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-		const wh = this.resolveWarehouse(this.postalCode);
-		const request: MercadonaSearchRequest = {
-			query,
-			offset: 0,
-			limit: 24,
-			wh,
-		};
+            // Handle postal code modal if it appears
+            const cpInputSelector = 'input[placeholder*="postal"], input[name*="postal"], input[id*="postal"]';
+            const hasCpModal = await page.$(cpInputSelector).catch(() => null);
+            if (hasCpModal) {
+                await page.fill(cpInputSelector, this.postalCode);
+                await page.keyboard.press('Enter');
+                await randomDelay(1500, 3000);
+            }
 
-		const response = await this.searchClient(request, headers);
-		return this.mapProducts(response.results);
-	}
+            // Navigate to search
+            const searchUrl = `https://tienda.mercadona.es/search-results?query=${encodeURIComponent(query)}`;
+            logger.info(`[Mercadona] Navigating to searchUrl: ${searchUrl}`);
+
+            // Start waiting for the API response BEFORE navigating
+            const apiResponsePromise = page.waitForResponse(
+                response => response.url().includes('api2.mercadona.es/api/search') && response.status() === 200,
+                { timeout: 15000 }
+            ).catch(() => null);
+
+            await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+            // Wait for either the API promise to resolve or a brief delay
+            await Promise.race([
+                apiResponsePromise,
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ]);
+
+            // Wait for API intercept to resolve, fallback to DOM scraping if needed
+            if (!apiResolved) {
+                logger.info(`[Mercadona] API not resolved, falling back to DOM parsing. Waiting for ProductCard...`);
+                await page.waitForSelector('[class*="product-cell"], [class*="ProductCard"]', {
+                    timeout: 10000,
+                }).catch(() => logger.warn(`[Mercadona] ProductCard timeout or not found`));
+
+                logger.info(`[Mercadona] Evaluating DOM...`);
+                const domProducts = await page.evaluate(() => {
+                    const cards = document.querySelectorAll('[class*="product-cell"], [class*="ProductCard"]');
+                    return Array.from(cards).map(card => ({
+                        name: card.querySelector('[class*="name"], h3, h4')?.textContent?.trim() ?? '',
+                        price: card.querySelector('[class*="price"]')?.textContent?.trim() ?? '',
+                        image: (card.querySelector('img') as HTMLImageElement)?.src ?? '',
+                        unit: card.querySelector('[class*="unit"], [class*="size"]')?.textContent?.trim() ?? '1 ud',
+                    }));
+                });
+
+                const fallback = await Promise.all(
+                    domProducts.filter(p => p.name && p.price).map(async p => {
+                        const normalized = normalizePricePerUnit(p.price, p.unit);
+                        const category = await categorize(p.name);
+                        return {
+                            id: uuidv4(),
+                            name: p.name,
+                            supermarket: this.name,
+                            category,
+                            price: normalized.price,
+                            pricePerUnit: normalized.pricePerUnit,
+                            unit: normalized.unit,
+                            image: p.image || undefined,
+                            taxType: 'IGIC' as const,
+                            scrapedAt: new Date().toISOString(),
+                        } satisfies IProduct;
+                    }),
+                );
+                collectedProducts.push(...fallback);
+            }
+
+            return collectedProducts;
+        } finally {
+            await page.close();
+            await context.close();
+        }
+    }
 }
