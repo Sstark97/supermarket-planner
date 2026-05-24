@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Playwright
+test-results/
+playwright-report/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
