@@ -5,7 +5,6 @@ import { ScraperBase } from "../base/ScraperBase";
 import { MercadonaHttpClient } from "../mercadona/MercadonaHttpClient";
 import {
 	buildMercadonaHeaders,
-	validateMercadonaHeaders,
 	type MercadonaHeaders,
 } from "../mercadona/MercadonaHeaders";
 import { mapMercadonaProducts } from "../mercadona/MercadonaMapper";
@@ -18,7 +17,6 @@ import type {
 
 interface MercadonaScraperDeps {
 	buildHeaders?: () => MercadonaHeaders;
-	validateHeaders?: (headers: MercadonaHeaders) => void;
 	resolveWarehouse?: (postalCode: string) => string;
 	searchClient?: (
 		request: MercadonaSearchRequest,
@@ -40,7 +38,6 @@ export class MercadonaScraper extends ScraperBase {
 	readonly name = "Mercadona";
 	private readonly postalCode = config.postalCode;
 	private readonly buildHeaders: () => MercadonaHeaders;
-	private readonly validateHeaders: (headers: MercadonaHeaders) => void;
 	private readonly resolveWarehouse: (postalCode: string) => string;
 	private readonly searchClient: (
 		request: MercadonaSearchRequest,
@@ -59,7 +56,6 @@ export class MercadonaScraper extends ScraperBase {
 		const httpClient = new MercadonaHttpClient();
 
 		this.buildHeaders = deps.buildHeaders ?? buildMercadonaHeaders;
-		this.validateHeaders = deps.validateHeaders ?? validateMercadonaHeaders;
 		this.resolveWarehouse = deps.resolveWarehouse ?? resolveMercadonaWarehouse;
 		this.searchClient =
 			deps.searchClient ??
@@ -71,7 +67,6 @@ export class MercadonaScraper extends ScraperBase {
 		logger.info(`[Mercadona] Searching API for query: ${query}`);
 
 		const headers = this.buildHeaders();
-		this.validateHeaders(headers);
 
 		const wh = this.resolveWarehouse(this.postalCode);
 		const request: MercadonaSearchRequest = {

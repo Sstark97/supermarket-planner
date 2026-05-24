@@ -53,7 +53,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 				Referer: "https://tienda.mercadona.es/",
 				"Accept-Language": "es-ES,es;q=0.9",
 			}),
-			validateHeaders: vi.fn(),
 			resolveWarehouse: vi.fn(() => "3544"),
 			searchClient: vi.fn(async () => ({ results: [] })),
 			mapProducts: vi.fn(async () => expectedProducts),
@@ -65,7 +64,7 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 		expect(browserManagerGetInstance).not.toHaveBeenCalled();
 	});
 
-	it("validates headers before dispatching HTTP search", async () => {
+	it("builds headers before dispatching HTTP search", async () => {
 		const events: string[] = [];
 		const headers = {
 			Origin: "https://tienda.mercadona.es",
@@ -81,9 +80,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 				events.push("build");
 				return headers;
 			},
-			validateHeaders: () => {
-				events.push("validate");
-			},
 			resolveWarehouse: vi.fn(() => "3544"),
 			searchClient: vi.fn(async () => {
 				events.push("search");
@@ -94,7 +90,7 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 
 		await scraper.search("pan");
 
-		expect(events).toEqual(["build", "validate", "search"]);
+		expect(events).toEqual(["build", "search"]);
 	});
 
 	it("resolves warehouse and forwards wh in request payload", async () => {
@@ -113,7 +109,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 				Referer: "https://tienda.mercadona.es/",
 				"Accept-Language": "es-ES,es;q=0.9",
 			}),
-			validateHeaders: vi.fn(),
 			resolveWarehouse,
 			searchClient,
 			mapProducts: vi.fn(async () => []),
@@ -162,7 +157,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 				Referer: "https://tienda.mercadona.es/",
 				"Accept-Language": "es-ES,es;q=0.9",
 			}),
-			validateHeaders: vi.fn(),
 			resolveWarehouse: vi.fn(() => "3544"),
 			searchClient: vi.fn(async () => ({ results: apiResults })),
 			mapProducts,
@@ -184,7 +178,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 				Referer: "https://tienda.mercadona.es/",
 				"Accept-Language": "es-ES,es;q=0.9",
 			}),
-			validateHeaders: vi.fn(),
 			resolveWarehouse: vi.fn(() => "3544"),
 			searchClient: vi.fn(async () => {
 				throw new Error("mercadona 429");
@@ -224,9 +217,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 		const buildSpy = vi
 			.spyOn(headersModule, "buildMercadonaHeaders")
 			.mockReturnValue(headers);
-		const validateSpy = vi
-			.spyOn(headersModule, "validateMercadonaHeaders")
-			.mockImplementation(() => undefined);
 		const resolveSpy = vi
 			.spyOn(warehouseModule, "resolveMercadonaWarehouse")
 			.mockReturnValue("3544");
@@ -241,7 +231,6 @@ describe("MercadonaScraper integration (US03 PR2)", () => {
 		const output = await scraper.search("atun");
 
 		expect(buildSpy).toHaveBeenCalledOnce();
-		expect(validateSpy).toHaveBeenCalledWith(headers);
 		expect(resolveSpy).toHaveBeenCalledWith("35010");
 		expect(searchSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
