@@ -1,6 +1,6 @@
-import { IProduct } from '../../interfaces/IProduct';
-import { IScraper } from '../../interfaces/IScraper';
-import { logger } from '../../utils/logger';
+import type { IProduct } from "../../interfaces/IProduct";
+import type { IScraper } from "../../interfaces/IScraper";
+import { logger } from "../../utils/logger";
 
 /**
  * Abstract base class for all supermarket scrapers.
@@ -11,60 +11,66 @@ import { logger } from '../../utils/logger';
  * Following OCP: new scrapers extend this class without modifying it.
  */
 export abstract class ScraperBase implements IScraper {
-    abstract readonly name: string;
+	abstract readonly name: string;
 
-    private failureCount = 0;
-    private circuitOpen = false;
-    private readonly threshold: number;
+	private failureCount = 0;
+	private circuitOpen = false;
+	private readonly threshold: number;
 
-    constructor(circuitBreakerThreshold = 5) {
-        this.threshold = circuitBreakerThreshold;
-    }
+	constructor(circuitBreakerThreshold = 5) {
+		this.threshold = circuitBreakerThreshold;
+	}
 
-    /**
-     * Public entry point. Handles circuit breaker and graceful error degradation.
-     */
-    async search(query: string): Promise<IProduct[]> {
-        if (this.circuitOpen) {
-            logger.warn(`[${this.name}] Circuit is OPEN — skipping scrape.`);
-            return [];
-        }
+	/**
+	 * Public entry point. Handles circuit breaker and graceful error degradation.
+	 */
+	async search(query: string): Promise<IProduct[]> {
+		if (this.circuitOpen) {
+			logger.warn(`[${this.name}] Circuit is OPEN — skipping scrape.`);
+			return [];
+		}
 
-        const start = Date.now();
-        try {
-            logger.info(`[${this.name}] Starting scrape for: "${query}"`);
-            const results = await this.scrape(query);
-            this.failureCount = 0; // reset on success
-            logger.info(`[${this.name}] Done. ${results.length} results in ${Date.now() - start}ms`);
-            return results;
-        } catch (error) {
-            this.failureCount++;
-            logger.error(`[${this.name}] Scrape failed (${this.failureCount}/${this.threshold}): ${String(error)}`);
+		const start = Date.now();
+		try {
+			logger.info(`[${this.name}] Starting scrape for: "${query}"`);
+			const results = await this.scrape(query);
+			this.failureCount = 0; // reset on success
+			logger.info(
+				`[${this.name}] Done. ${results.length} results in ${Date.now() - start}ms`,
+			);
+			return results;
+		} catch (error) {
+			this.failureCount++;
+			logger.error(
+				`[${this.name}] Scrape failed (${this.failureCount}/${this.threshold}): ${String(error)}`,
+			);
 
-            if (this.failureCount >= this.threshold) {
-                this.circuitOpen = true;
-                logger.error(`[${this.name}] Circuit OPENED after ${this.threshold} consecutive failures.`);
-            }
+			if (this.failureCount >= this.threshold) {
+				this.circuitOpen = true;
+				logger.error(
+					`[${this.name}] Circuit OPENED after ${this.threshold} consecutive failures.`,
+				);
+			}
 
-            return [];
-        }
-    }
+			throw error;
+		}
+	}
 
-    /**
-     * Resets the circuit breaker (e.g., after a fix deployment).
-     */
-    resetCircuit(): void {
-        this.failureCount = 0;
-        this.circuitOpen = false;
-        logger.info(`[${this.name}] Circuit reset.`);
-    }
+	/**
+	 * Resets the circuit breaker (e.g., after a fix deployment).
+	 */
+	resetCircuit(): void {
+		this.failureCount = 0;
+		this.circuitOpen = false;
+		logger.info(`[${this.name}] Circuit reset.`);
+	}
 
-    get isCircuitOpen(): boolean {
-        return this.circuitOpen;
-    }
+	get isCircuitOpen(): boolean {
+		return this.circuitOpen;
+	}
 
-    /**
-     * Core scraping logic — subclasses implement this.
-     */
-    protected abstract scrape(query: string): Promise<IProduct[]>;
+	/**
+	 * Core scraping logic — subclasses implement this.
+	 */
+	protected abstract scrape(query: string): Promise<IProduct[]>;
 }
