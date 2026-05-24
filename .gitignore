@@ -25,4 +25,7 @@ frontend/out/
 # Test artifacts
 backend/test-results/
 backend/playwright-report/
+backend/debug/
 coverage/
+# Local Pi runtime state
+.atl/
