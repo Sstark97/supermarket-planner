@@ -12,6 +12,7 @@ model Product {
   name         String
   supermarket  String
   category     String
+  sku          String
   price        Float
   pricePerUnit Float
   unit         String
@@ -20,6 +21,7 @@ model Product {
   taxType      String
   scrapedAt    DateTime @default(now())
 
+  @@unique([supermarket, sku])
   @@index([name])
   @@index([category])
   @@index([supermarket])
