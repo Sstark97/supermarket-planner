@@ -2,6 +2,7 @@ import type { IScraper } from "../interfaces/IScraper";
 import type { IProduct } from "../interfaces/IProduct";
 import { logger } from "../utils/logger";
 import { prisma } from "../db/prisma";
+import { buildProductSku } from "../utils/ProductIdentity";
 import { BackgroundRefreshQueue } from "./BackgroundRefreshQueue";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -40,11 +41,30 @@ export class SearchService {
 
 		let saved = 0;
 		for (const product of liveResult.results) {
-			await prisma.product.create({
-				data: {
+			const sku = buildProductSku(product);
+			await prisma.product.upsert({
+				where: {
+					supermarket_sku: {
+						supermarket: product.supermarket,
+						sku,
+					},
+				},
+				update: {
+					name: product.name,
+					category: product.category,
+					price: product.price,
+					pricePerUnit: product.pricePerUnit,
+					unit: product.unit,
+					image: product.image,
+					url: product.url,
+					taxType: product.taxType,
+					scrapedAt: new Date(product.scrapedAt),
+				},
+				create: {
 					name: product.name,
 					supermarket: product.supermarket,
 					category: product.category,
+					sku,
 					price: product.price,
 					pricePerUnit: product.pricePerUnit,
 					unit: product.unit,
