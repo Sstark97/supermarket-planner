@@ -5,6 +5,47 @@ import { categorize } from "../../utils/ProductCategorizer";
 import { logger } from "../../utils/logger";
 import { v4 as uuidv4 } from "uuid";
 
+const ALDI_ALGOLIA_URL =
+	"https://l9knu74io7-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.2)";
+const ALDI_CANARY_INDICES = [
+	"prod_es_es_can_offers",
+	"prod_es_es_can_assortment",
+] as const;
+const ALDI_CANARY_STORE_IDS = [
+	"ES005001",
+	"ES005002",
+	"ES005003",
+	"ES005004",
+	"ES005005",
+	"ES005006",
+	"ES005008",
+	"ES005009",
+	"ES005010",
+	"ES005011",
+	"ES005012",
+	"ES005014",
+	"ES005018",
+	"ES005019",
+	"ES005020",
+	"ES005025",
+] as const;
+
+function buildCanaryFacetFiltersParam(): string {
+	const orStoreFilters = ALDI_CANARY_STORE_IDS.map(
+		(storeId) => `storeID:${storeId}`,
+	);
+	return encodeURIComponent(JSON.stringify([orStoreFilters]));
+}
+
+function buildParams(query: string, withCanaryStoreFilters: boolean): string {
+	const baseParams = `query=${encodeURIComponent(query)}&hitsPerPage=40&clickAnalytics=true`;
+	if (!withCanaryStoreFilters) {
+		return baseParams;
+	}
+
+	return `${baseParams}&facetFilters=${buildCanaryFacetFiltersParam()}`;
+}
+
 /**
  * Aldi Scraper — best-effort. Limited online catalog in Canarias.
  * Targets the ES Aldi shop search endpoint.
@@ -12,43 +53,47 @@ import { v4 as uuidv4 } from "uuid";
 export class AldiScraper extends ScraperBase {
 	readonly name = "Aldi";
 
+	private async queryAlgolia(
+		query: string,
+		withCanaryStoreFilters: boolean,
+	): Promise<any[]> {
+		const params = buildParams(query, withCanaryStoreFilters);
+		const response = await fetch(ALDI_ALGOLIA_URL, {
+			method: "POST",
+			headers: {
+				"x-algolia-api-key": "19b0e28f08344395447c7bdeea32da58",
+				"x-algolia-application-id": "L9KNU74IO7",
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				requests: ALDI_CANARY_INDICES.map((indexName) => ({
+					indexName,
+					params,
+				})),
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Aldi API failed: ${response.statusText}`);
+		}
+
+		const data = (await response.json()) as any;
+		const results = data.results ?? [];
+		return [...(results[0]?.hits || []), ...(results[1]?.hits || [])];
+	}
+
 	protected async scrape(query: string): Promise<IProduct[]> {
 		logger.info(`[Aldi] Fetching from Algolia API for: "${query}"`);
 
 		try {
-			const response = await fetch(
-				"https://l9knu74io7-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.2)",
-				{
-					method: "POST",
-					headers: {
-						"x-algolia-api-key": "19b0e28f08344395447c7bdeea32da58",
-						"x-algolia-application-id": "L9KNU74IO7",
-						"content-type": "application/json",
-					},
-					body: JSON.stringify({
-						requests: [
-							{
-								indexName: "prod_es_es_es_offers",
-								params: `query=${encodeURIComponent(query)}&hitsPerPage=40&clickAnalytics=true`,
-							},
-							{
-								indexName: "prod_es_es_es_assortment",
-								params: `query=${encodeURIComponent(query)}&hitsPerPage=40&clickAnalytics=true`,
-							},
-						],
-					}),
-				},
-			);
+			let allHits = await this.queryAlgolia(query, true);
 
-			if (!response.ok) {
-				throw new Error(`Aldi API failed: ${response.statusText}`);
+			if (allHits.length === 0) {
+				logger.warn(
+					"[Aldi] Canary store facet filters returned 0 hits, retrying without filters.",
+				);
+				allHits = await this.queryAlgolia(query, false);
 			}
-
-			const data = (await response.json()) as any;
-			const allHits = [
-				...(data.results?.[0]?.hits || []),
-				...(data.results?.[1]?.hits || []),
-			];
 
 			logger.info(`[Aldi] Found ${allHits.length} hits across indices.`);
 
@@ -61,7 +106,7 @@ export class AldiScraper extends ScraperBase {
 
 					return {
 						id: uuidv4(),
-						name: name,
+						name,
 						supermarket: this.name,
 						category,
 						price: Number(price),
@@ -71,7 +116,7 @@ export class AldiScraper extends ScraperBase {
 						url:
 							hit.productUrl ||
 							(hit.url ? `https://www.aldi.es${hit.url}` : undefined),
-						taxType: detectTaxType(name),
+						taxType: detectTaxType(`${name} IGIC`),
 						scrapedAt: new Date().toISOString(),
 					} satisfies IProduct;
 				}),
