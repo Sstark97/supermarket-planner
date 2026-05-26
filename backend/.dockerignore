@@ -1,0 +1,10 @@
+node_modules
+dist
+logs
+debug
+.git
+.pi-lens
+.env
+coverage
+playwright-report
+test-results
