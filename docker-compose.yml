@@ -1,16 +1,72 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: antigravity-postgres
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
-      POSTGRES_DB: supermarket_planner
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  database:
+    image: postgres:16-alpine
+    container_name: supermarket-planner-database
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - app-network
 
-volumes:
-  postgres_data:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: supermarket-planner-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: database
+      DB_PORT: 5432
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PLAYWRIGHT_HEADLESS: ${PLAYWRIGHT_HEADLESS:-true}
+      CIRCUIT_BREAKER_THRESHOLD: ${CIRCUIT_BREAKER_THRESHOLD:-5}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
+      POSTAL_CODE: ${POSTAL_CODE:-35010}
+      POSTGRES_USER: ${POSTGRES_USER}
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/debug:/app/debug
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3000}
+    container_name: supermarket-planner-frontend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3000}
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
