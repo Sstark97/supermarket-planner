@@ -1,9 +1,15 @@
 import { ScraperBase } from "../base/ScraperBase";
+import type {
+	AldiAlgoliaHit,
+	AldiAlgoliaMultiQueryResponse,
+} from "../../application/dto/ScraperPayloads";
+import {
+	defaultProductMapper,
+	type ProductMapper,
+} from "../../domain/services/ProductMappingPolicy";
 import type { IProduct } from "../../interfaces/IProduct";
-import { detectTaxType } from "../../utils/PriceNormalizer";
 import { categorize } from "../../utils/ProductCategorizer";
 import { logger } from "../../utils/logger";
-import { v4 as uuidv4 } from "uuid";
 
 const ALDI_ALGOLIA_URL =
 	"https://l9knu74io7-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.2)";
@@ -52,11 +58,17 @@ function buildParams(query: string, withCanaryStoreFilters: boolean): string {
  */
 export class AldiScraper extends ScraperBase {
 	readonly name = "Aldi";
+	private readonly productMapper: ProductMapper;
+
+	constructor(productMapper: ProductMapper = defaultProductMapper) {
+		super();
+		this.productMapper = productMapper;
+	}
 
 	private async queryAlgolia(
 		query: string,
 		withCanaryStoreFilters: boolean,
-	): Promise<any[]> {
+	): Promise<AldiAlgoliaHit[]> {
 		const params = buildParams(query, withCanaryStoreFilters);
 		const response = await fetch(ALDI_ALGOLIA_URL, {
 			method: "POST",
@@ -77,7 +89,7 @@ export class AldiScraper extends ScraperBase {
 			throw new Error(`Aldi API failed: ${response.statusText}`);
 		}
 
-		const data = (await response.json()) as any;
+		const data = (await response.json()) as AldiAlgoliaMultiQueryResponse;
 		const results = data.results ?? [];
 		return [...(results[0]?.hits || []), ...(results[1]?.hits || [])];
 	}
@@ -98,27 +110,27 @@ export class AldiScraper extends ScraperBase {
 			logger.info(`[Aldi] Found ${allHits.length} hits across indices.`);
 
 			return Promise.all(
-				allHits.map(async (hit: any) => {
+				allHits.map(async (hit) => {
 					const name = hit.productName || hit.name || "Producto Aldi";
-					const price = hit.salesPrice || hit.price || 0;
-					const unit = hit.salesUnitFormatted || hit.sales_unit || "1 ud";
+					const priceRaw = hit.salesPrice || hit.price || 0;
+					const quantityRaw =
+						hit.salesUnitFormatted || hit.sales_unit || "1 ud";
 					const category = await categorize(name);
 
-					return {
-						id: uuidv4(),
-						name,
+					return this.productMapper.toDomain({
 						supermarket: this.name,
+						name,
 						category,
-						price: Number(price),
-						pricePerUnit: hit.basePriceValue || Number(price),
-						unit: hit.basePriceScale || unit,
+						priceRaw,
+						pricePerUnitRaw: hit.basePriceValue,
+						quantityRaw,
+						unitRaw: hit.basePriceScale,
 						image: hit.productPicture || hit.image_url || undefined,
 						url:
 							hit.productUrl ||
 							(hit.url ? `https://www.aldi.es${hit.url}` : undefined),
-						taxType: detectTaxType(`${name} IGIC`),
-						scrapedAt: new Date().toISOString(),
-					} satisfies IProduct;
+						taxHint: `${name} IGIC`,
+					});
 				}),
 			);
 		} catch (error) {

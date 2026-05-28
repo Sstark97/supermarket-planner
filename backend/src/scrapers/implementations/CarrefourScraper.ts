@@ -1,13 +1,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { BrowserContext, Page } from "playwright";
-import { v4 as uuidv4 } from "uuid";
+import type {
+	CarrefourSearchApiResponse,
+	CarrefourSearchDoc,
+} from "../../application/dto/ScraperPayloads";
+import {
+	defaultProductMapper,
+	type ProductMapper,
+} from "../../domain/services/ProductMappingPolicy";
 import type { IProduct } from "../../interfaces/IProduct";
 import { categorize } from "../../utils/ProductCategorizer";
-import {
-	detectTaxType,
-	normalizePricePerUnit,
-} from "../../utils/PriceNormalizer";
 import { logger } from "../../utils/logger";
 import { ScraperBase } from "../base/ScraperBase";
 import { getRandomUserAgent, randomDelay } from "../strategies/StealthHelper";
@@ -23,6 +26,12 @@ import { BrowserManager } from "../strategies/BrowserManager";
  */
 export class CarrefourScraper extends ScraperBase {
 	readonly name = "Carrefour";
+	private readonly productMapper: ProductMapper;
+
+	constructor(productMapper: ProductMapper = defaultProductMapper) {
+		super();
+		this.productMapper = productMapper;
+	}
 
 	protected async scrape(query: string): Promise<IProduct[]> {
 		const ua = getRandomUserAgent();
@@ -40,8 +49,8 @@ export class CarrefourScraper extends ScraperBase {
 				{ timeout: 15000 },
 			);
 
-			const data = await response.json();
-			const docs = data.content?.docs || [];
+			const data = (await response.json()) as CarrefourSearchApiResponse;
+			const docs: CarrefourSearchDoc[] = data.content?.docs || [];
 			logger.info(`[Carrefour] Found ${docs.length} products in API response`);
 
 			if (docs.length > 0) {
@@ -49,31 +58,24 @@ export class CarrefourScraper extends ScraperBase {
 			}
 
 			return Promise.all(
-				docs.map(async (doc: any) => {
+				docs.map(async (doc) => {
 					const name = doc.display_name || doc.name || "Producto Carrefour";
-					const price =
+					const priceRaw =
 						doc.active_price || doc.app_price || doc.list_price || 0;
 					const image =
 						doc.image_path || doc.image || doc.image_url || undefined;
-
-					const unitText = doc.price_per_unit_text || "1 ud";
-					const normalized = normalizePricePerUnit(`${price} €`, unitText);
-
 					const category = await categorize(name);
 
-					return {
-						id: uuidv4(),
-						name,
+					return this.productMapper.toDomain({
 						supermarket: this.name,
+						name,
 						category,
-						price: Number(price),
-						pricePerUnit: normalized.pricePerUnit,
-						unit: normalized.unit,
+						priceRaw,
+						quantityRaw: doc.price_per_unit_text || "1 ud",
 						image: image || undefined,
 						url: doc.url ? `https://www.carrefour.es${doc.url}` : undefined,
-						taxType: detectTaxType(name),
-						scrapedAt: new Date().toISOString(),
-					} satisfies IProduct;
+						taxHint: name,
+					});
 				}),
 			);
 		} catch (error) {

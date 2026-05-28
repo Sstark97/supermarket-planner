@@ -1,16 +1,13 @@
-import { v4 as uuidv4 } from "uuid";
+import type { MercadonaApiProduct } from "../../application/dto/ScraperPayloads";
+import {
+	defaultProductMapper,
+	type ProductMapper,
+} from "../../domain/services/ProductMappingPolicy";
 import type { IProduct } from "../../interfaces/IProduct";
 import { categorize } from "../../utils/ProductCategorizer";
-import {
-	detectTaxType,
-	normalizePricePerUnit,
-} from "../../utils/PriceNormalizer";
-import type { MercadonaApiProduct } from "./types";
 
 interface MercadonaMapperDeps {
-	categorizeFn?: (name: string) => Promise<IProduct["category"]>;
-	uuidFn?: () => string;
-	nowFn?: () => string;
+	productMapper?: ProductMapper;
 	supermarketName?: string;
 }
 
@@ -33,33 +30,23 @@ export async function mapMercadonaProducts(
 	products: MercadonaApiProduct[],
 	deps: MercadonaMapperDeps = {},
 ): Promise<IProduct[]> {
-	const categorizeFn = deps.categorizeFn ?? categorize;
-	const uuidFn = deps.uuidFn ?? uuidv4;
-	const nowFn = deps.nowFn ?? (() => new Date().toISOString());
 	const supermarketName = deps.supermarketName ?? "Mercadona";
+	const productMapper = deps.productMapper ?? defaultProductMapper;
 
 	return Promise.all(
 		products.map(async (item) => {
-			const normalized = normalizePricePerUnit(
-				getPriceRaw(item),
-				getQuantityRaw(item),
-			);
 			const name = item.display_name ?? "";
-			const category = await categorizeFn(name);
-
-			return {
-				id: uuidFn(),
-				name,
+			const category = await categorize(name);
+			return productMapper.toDomain({
 				supermarket: supermarketName,
+				name,
 				category,
-				price: normalized.price,
-				pricePerUnit: normalized.pricePerUnit,
-				unit: normalized.unit,
+				priceRaw: getPriceRaw(item),
+				quantityRaw: getQuantityRaw(item),
 				image: item.thumbnail ?? undefined,
 				url: `https://tienda.mercadona.es/product/${item.id}`,
-				taxType: detectTaxType("IGIC"),
-				scrapedAt: nowFn(),
-			} satisfies IProduct;
+				taxHint: "IGIC",
+			});
 		}),
 	);
 }
