@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import { config } from "./config";
 import { logger } from "./utils/logger";
-import { BrowserManager } from "./scrapers/strategies/BrowserManager";
-import { SearchService } from "./services/SearchService";
+import { BrowserManager } from "./infrastructure/adapters/driven/scraping/strategies/BrowserManager";
+import { SearchProductsUseCase } from "./application/use-cases/search/SearchProductsUseCase";
 import { SearchController } from "./controllers/SearchController";
 import { errorHandler } from "./middlewares/errorHandler";
 import { ScraperCron } from "./cron/scraperCron";
@@ -11,11 +11,11 @@ import { prisma } from "./db/prisma";
 import { buildProductSku } from "./utils/ProductIdentity";
 
 // Scraper implementations
-import { HiperDinoScraper } from "./scrapers/implementations/HiperDinoScraper";
-import { MercadonaScraper } from "./scrapers/implementations/MercadonaScraper";
-import { CarrefourScraper } from "./scrapers/implementations/CarrefourScraper";
-import { LidlScraper } from "./scrapers/implementations/LidlScraper";
-import { AldiScraper } from "./scrapers/implementations/AldiScraper";
+import { HiperDinoScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
+import { MercadonaScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
+import { CarrefourScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
+import { LidlScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/LidlScraperAdapter";
+import { AldiScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/AldiScraperAdapter";
 
 async function bootstrap() {
 	const app = express();
@@ -25,26 +25,30 @@ async function bootstrap() {
 
 	// --- Register all scrapers here (OCP: just add new ones to this array) ---
 	const scrapers = [
-		new HiperDinoScraper(),
-		new MercadonaScraper(),
-		new CarrefourScraper(),
-		new LidlScraper(),
-		new AldiScraper(),
+		new HiperDinoScraperAdapter(),
+		new MercadonaScraperAdapter(),
+		new CarrefourScraperAdapter(),
+		new LidlScraperAdapter(),
+		new AldiScraperAdapter(),
 	];
 
-	const searchService = new SearchService(scrapers);
-	const searchController = new SearchController(searchService);
-	const scraperCron = new ScraperCron(searchService);
+	const searchProductsUseCase = new SearchProductsUseCase(scrapers);
+	const searchController = new SearchController(searchProductsUseCase);
+	const scraperCron = new ScraperCron(searchProductsUseCase);
 
 	// --- Routes ---
 	app.get("/health", (_req, res) => {
 		res.json({
 			status: "ok",
 			dbConnected: true,
-			scrapers: scrapers.map((s) => ({
-				name: s.name,
-				circuitOpen: s.isCircuitOpen,
-			})),
+			scrapers: scrapers.map((scraper) => {
+				const circuit = scraper.getCircuitBreakerStatus();
+				return {
+					name: scraper.name,
+					circuitOpen: scraper.isCircuitOpen,
+					circuit,
+				};
+			}),
 		});
 	});
 
@@ -54,7 +58,7 @@ async function bootstrap() {
 		try {
 			const q = req.params.query;
 			logger.info(`Manual scrape triggered for: ${q}`);
-			const result = await searchService.search(q);
+			const result = await searchProductsUseCase.search(q);
 
 			let saved = 0;
 			for (const p of result.results) {

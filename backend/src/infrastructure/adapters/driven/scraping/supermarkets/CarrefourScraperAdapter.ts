@@ -4,16 +4,19 @@ import type { BrowserContext, Page } from "playwright";
 import type {
 	CarrefourSearchApiResponse,
 	CarrefourSearchDoc,
-} from "../../application/dto/ScraperPayloads";
+} from "../../../../../application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../interfaces/IProduct";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
-import { ScraperBase } from "../base/ScraperBase";
-import { getRandomUserAgent, randomDelay } from "../strategies/StealthHelper";
+} from "../../../../../domain/services/ProductMappingPolicy";
+import type { IProduct } from "../../../../../interfaces/IProduct";
+import { categorize } from "../../../../../utils/ProductCategorizer";
+import { logger } from "../../../../../utils/logger";
+import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
+import {
+	getRandomUserAgent,
+	randomDelay,
+} from "../strategies/StealthHelper";
 import { BrowserManager } from "../strategies/BrowserManager";
 
 /**
@@ -24,7 +27,7 @@ import { BrowserManager } from "../strategies/BrowserManager";
  *  - Human-like sequential navigation (home -> cookie consent -> regional cookie -> search).
  *  - If blocked/intercepted (timeout/selector issues), persist visual debug artifacts and rethrow.
  */
-export class CarrefourScraper extends ScraperBase {
+export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Carrefour";
 	private readonly productMapper: ProductMapper;
 
@@ -143,11 +146,14 @@ export class CarrefourScraper extends ScraperBase {
 				);
 				return;
 			} catch {
-				// Try next selector candidate
+				// Missing/timeout selectors are expected across geo/session variants.
+				// Keep trying next candidate and continue best-effort.
 			}
 		}
 
-		throw new Error("Missing selector: cookie banner accept button");
+		logger.warn(
+			"[Carrefour] Cookie banner not found/accepted. Continuing best-effort.",
+		);
 	}
 
 	private shouldCaptureDebugArtifacts(error: unknown): boolean {

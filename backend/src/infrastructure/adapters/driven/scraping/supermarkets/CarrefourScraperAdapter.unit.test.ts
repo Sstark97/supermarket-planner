@@ -47,9 +47,9 @@ vi.mock("../strategies/BrowserManager", () => ({
 	},
 }));
 
-import { CarrefourScraper } from "./CarrefourScraper";
+import { CarrefourScraperAdapter } from "./CarrefourScraperAdapter";
 
-describe("CarrefourScraper", () => {
+describe("CarrefourScraperAdapter", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		goto.mockResolvedValue(undefined);
@@ -65,7 +65,7 @@ describe("CarrefourScraper", () => {
 	it("rethrows interception/navigation failures so base circuit can count them", async () => {
 		waitForResponse.mockRejectedValueOnce(new Error("captcha detected"));
 
-		const scraper = new CarrefourScraper();
+		const scraper = new CarrefourScraperAdapter();
 
 		await expect(scraper.search("leche")).rejects.toThrow("captcha detected");
 		expect(goto).toHaveBeenCalledTimes(2);
@@ -80,7 +80,7 @@ describe("CarrefourScraper", () => {
 			new Error("Timeout 15000ms exceeded"),
 		);
 
-		const scraper = new CarrefourScraper();
+		const scraper = new CarrefourScraperAdapter();
 
 		await expect(scraper.search("leche")).rejects.toThrow(
 			"Timeout 15000ms exceeded",
@@ -90,18 +90,17 @@ describe("CarrefourScraper", () => {
 		expect(fsMocks.writeFile).toHaveBeenCalledOnce();
 	});
 
-	it("captures debug artifacts when cookie selector cannot be found", async () => {
+	it("continues best-effort when cookie selector is missing", async () => {
 		click.mockRejectedValue(new Error("selector missing"));
+		waitForResponse.mockRejectedValueOnce(new Error("captcha detected"));
 
-		const scraper = new CarrefourScraper();
+		const scraper = new CarrefourScraperAdapter();
 
-		await expect(scraper.search("leche")).rejects.toThrow(
-			"Missing selector: cookie banner accept button",
-		);
-		expect(fsMocks.mkdir).toHaveBeenCalledOnce();
-		expect(screenshot).toHaveBeenCalledOnce();
-		expect(fsMocks.writeFile).toHaveBeenCalledOnce();
-		expect(addCookies).not.toHaveBeenCalled();
-		expect(goto).toHaveBeenCalledTimes(1);
+		await expect(scraper.search("leche")).rejects.toThrow("captcha detected");
+		expect(addCookies).toHaveBeenCalledOnce();
+		expect(goto).toHaveBeenCalledTimes(2);
+		expect(fsMocks.mkdir).not.toHaveBeenCalled();
+		expect(screenshot).not.toHaveBeenCalled();
+		expect(fsMocks.writeFile).not.toHaveBeenCalled();
 	});
 });

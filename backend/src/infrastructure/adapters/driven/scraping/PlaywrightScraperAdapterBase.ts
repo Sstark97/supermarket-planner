@@ -1,6 +1,9 @@
-import type { IProduct } from "../../interfaces/IProduct";
-import type { IScraper } from "../../interfaces/IScraper";
-import { logger } from "../../utils/logger";
+import type {
+	CircuitBreakerStatus,
+	SupermarketSearchPort,
+} from "../../../../application/ports/outgoing/SupermarketSearchPort";
+import type { IProduct } from "../../../../interfaces/IProduct";
+import { logger } from "../../../../utils/logger";
 
 /**
  * Abstract base class for all supermarket scrapers.
@@ -10,7 +13,9 @@ import { logger } from "../../utils/logger";
  *
  * Following OCP: new scrapers extend this class without modifying it.
  */
-export abstract class ScraperBase implements IScraper {
+export abstract class PlaywrightScraperAdapterBase
+	implements SupermarketSearchPort
+{
 	abstract readonly name: string;
 
 	private failureCount = 0;
@@ -67,6 +72,15 @@ export abstract class ScraperBase implements IScraper {
 
 	get isCircuitOpen(): boolean {
 		return this.circuitOpen;
+	}
+
+	getCircuitBreakerStatus(): CircuitBreakerStatus {
+		return {
+			state: this.circuitOpen ? "open" : "closed",
+			isOpen: this.circuitOpen,
+			failureCount: this.failureCount,
+			threshold: this.threshold,
+		};
 	}
 
 	/**

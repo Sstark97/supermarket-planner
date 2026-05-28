@@ -2,16 +2,16 @@ import type {
 	MercadonaApiProduct,
 	MercadonaDomProduct,
 	MercadonaSearchResponse,
-} from "../../application/dto/ScraperPayloads";
-import { config } from "../../config";
+} from "../../../../../application/dto/ScraperPayloads";
+import { config } from "../../../../../config";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../interfaces/IProduct";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
-import { ScraperBase } from "../base/ScraperBase";
+} from "../../../../../domain/services/ProductMappingPolicy";
+import type { IProduct } from "../../../../../interfaces/IProduct";
+import { categorize } from "../../../../../utils/ProductCategorizer";
+import { logger } from "../../../../../utils/logger";
+import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import { BrowserManager } from "../strategies/BrowserManager";
 import { getRandomUserAgent, randomDelay } from "../strategies/StealthHelper";
 
@@ -23,7 +23,7 @@ import { getRandomUserAgent, randomDelay } from "../strategies/StealthHelper";
  *  2. If the CP modal appears, inject it programmatically.
  *  3. Parse the internal JSON response — far more reliable than DOM scraping on an SPA.
  */
-export class MercadonaScraper extends ScraperBase {
+export class MercadonaScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Mercadona";
 	private readonly productMapper: ProductMapper;
 	private readonly postalCode = config.postalCode; // 35010

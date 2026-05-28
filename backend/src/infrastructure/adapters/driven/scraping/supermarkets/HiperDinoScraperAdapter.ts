@@ -1,12 +1,12 @@
-import { ScraperBase } from "../base/ScraperBase";
-import type { HiperDinoRawProduct } from "../../application/dto/ScraperPayloads";
+import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
+import type { HiperDinoRawProduct } from "../../../../../application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../interfaces/IProduct";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
+} from "../../../../../domain/services/ProductMappingPolicy";
+import type { IProduct } from "../../../../../interfaces/IProduct";
+import { categorize } from "../../../../../utils/ProductCategorizer";
+import { logger } from "../../../../../utils/logger";
 import { BrowserManager } from "../strategies/BrowserManager";
 import {
 	blockUnnecessaryResources,
@@ -35,7 +35,7 @@ export function extractHiperDinoUnit(
  * HiperDino Scraper — most relevant local supermarket in Las Palmas.
  * Site uses traditional server-rendered HTML — lowest scraping difficulty.
  */
-export class HiperDinoScraper extends ScraperBase {
+export class HiperDinoScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "HiperDino";
 	private readonly productMapper: ProductMapper;
 

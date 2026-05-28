@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { logger } from "../utils/logger";
+import { logger } from "../../../../utils/logger";
 
 type RefreshHandler = (query: string) => Promise<void>;
 

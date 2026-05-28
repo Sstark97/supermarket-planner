@@ -1,12 +1,12 @@
-import type { LidlRawProduct } from "../../application/dto/ScraperPayloads";
+import type { LidlRawProduct } from "../../../../../application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../interfaces/IProduct";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
-import { ScraperBase } from "../base/ScraperBase";
+} from "../../../../../domain/services/ProductMappingPolicy";
+import type { IProduct } from "../../../../../interfaces/IProduct";
+import { categorize } from "../../../../../utils/ProductCategorizer";
+import { logger } from "../../../../../utils/logger";
+import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import { BrowserManager } from "../strategies/BrowserManager";
 import {
 	blockUnnecessaryResources,
@@ -18,7 +18,7 @@ import {
  * Lidl Scraper — best-effort. Lidl ES has limited Canary Islands catalog.
  * Targets the ES online shop and filters by search query.
  */
-export class LidlScraper extends ScraperBase {
+export class LidlScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Lidl";
 	private readonly productMapper: ProductMapper;
 

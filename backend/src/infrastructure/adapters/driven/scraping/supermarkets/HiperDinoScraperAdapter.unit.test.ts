@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractHiperDinoUnit } from "./HiperDinoScraper";
+import { extractHiperDinoUnit } from "./HiperDinoScraperAdapter";
 
 describe("extractHiperDinoUnit", () => {
 	it("extracts volume/weight from secondary description text", () => {
