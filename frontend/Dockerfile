@@ -1,7 +1,7 @@
 FROM node:22-alpine AS base
 
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@10.28.2
 
 FROM base AS deps
 
@@ -23,7 +23,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-RUN corepack enable
+RUN npm install -g pnpm@10.28.2
 
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml

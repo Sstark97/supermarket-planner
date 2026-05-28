@@ -2,13 +2,14 @@ FROM mcr.microsoft.com/playwright:v1.50.1-noble AS base
 
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g pnpm@10.28.2
 
 FROM base AS deps
 
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
+RUN pnpm prisma generate
 
 FROM base AS builder
 
