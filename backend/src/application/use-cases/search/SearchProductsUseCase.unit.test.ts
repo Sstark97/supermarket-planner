@@ -1,89 +1,123 @@
 import { describe, expect, it, vi } from "vitest";
-import { SearchProductsUseCase } from "./SearchProductsUseCase";
-import type {
-	CircuitBreakerStatus,
-	SupermarketSearchPort,
-} from "../../ports/outgoing/SupermarketSearchPort";
+import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
+import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
 import { ProductCategory, type IProduct } from "../../../interfaces/IProduct";
+import { SearchProductsUseCase } from "./SearchProductsUseCase";
 
-vi.mock("../../../db/prisma", () => ({
-	prisma: {
-		product: {
-			findMany: vi.fn(),
-		},
-	},
-}));
+let productSequence = 0;
 
-const makeProduct = (
-	name: string,
-	supermarket: string,
-	pricePerUnit: number,
-): IProduct => ({
-	id: `${supermarket}-${name}`,
-	name,
-	supermarket,
-	category: ProductCategory.OTHER,
-	price: pricePerUnit,
-	pricePerUnit,
-	unit: "ud",
-	taxType: "UNKNOWN",
-	scrapedAt: new Date().toISOString(),
+const makeProduct = (overrides: Partial<IProduct> = {}): IProduct => ({
+	id: overrides.id ?? `product-${++productSequence}`,
+	name: overrides.name ?? "Leche Entera",
+	supermarket: overrides.supermarket ?? "Mercado Uno",
+	category: overrides.category ?? ProductCategory.DAIRY,
+	price: overrides.price ?? 1.5,
+	pricePerUnit: overrides.pricePerUnit ?? 1.5,
+	unit: overrides.unit ?? "1 L",
+	image: overrides.image,
+	url: overrides.url,
+	taxType: overrides.taxType ?? "UNKNOWN",
+	scrapedAt: overrides.scrapedAt ?? new Date().toISOString(),
 });
 
-const makeCircuitStatus = (
-	failureCount = 0,
-	threshold = 5,
-): CircuitBreakerStatus => ({
-	state: failureCount >= threshold ? "open" : "closed",
-	isOpen: failureCount >= threshold,
-	failureCount,
-	threshold,
-});
+function buildUseCase(
+	products: IProduct[],
+	queueEnqueueResult = true,
+): {
+	useCase: SearchProductsUseCase;
+	productCatalogRepository: ProductCatalogRepository;
+	backgroundRefreshQueue: BackgroundRefreshQueuePort;
+} {
+	const productCatalogRepository: ProductCatalogRepository = {
+		find: vi.fn().mockResolvedValue(products),
+		save: vi.fn().mockResolvedValue(0),
+	};
 
-describe("SearchProductsUseCase.search", () => {
-	it("captures rejected scrapers as warnings and keeps fulfilled results", async () => {
-		const okScraper: SupermarketSearchPort = {
-			name: "OKMarket",
-			search: vi.fn().mockResolvedValue([makeProduct("Milk", "OKMarket", 1.2)]),
-			isCircuitOpen: false,
-			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(0)),
-		};
+	const backgroundRefreshQueue: BackgroundRefreshQueuePort = {
+		enqueue: vi.fn().mockReturnValue(queueEnqueueResult),
+	};
 
-		const failingScraper: SupermarketSearchPort = {
-			name: "FailMarket",
-			search: vi.fn().mockRejectedValue(new Error("upstream timeout")),
-			isCircuitOpen: false,
-			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
-		};
+	return {
+		useCase: new SearchProductsUseCase(
+			productCatalogRepository,
+			backgroundRefreshQueue,
+		),
+		productCatalogRepository,
+		backgroundRefreshQueue,
+	};
+}
 
-		const useCase = new SearchProductsUseCase([okScraper, failingScraper]);
-		const result = await useCase.search("milk");
+describe("SearchProductsUseCase.execute", () => {
+	it("deduplicates by supermarket and normalized name keeping cheapest pricePerUnit", async () => {
+		const duplicatedProducts = [
+			makeProduct({
+				name: "Leche Entera",
+				supermarket: "Lidl",
+				pricePerUnit: 1.8,
+			}),
+			makeProduct({
+				name: "LECHE   ENTERA!!!",
+				supermarket: "Lidl",
+				pricePerUnit: 1.2,
+			}),
+			makeProduct({
+				name: "Leche Entera",
+				supermarket: "Aldi",
+				pricePerUnit: 1.1,
+			}),
+		];
 
-		expect(result.results).toHaveLength(1);
-		expect(result.results[0].supermarket).toBe("OKMarket");
-		expect(result.warnings).toEqual(["FailMarket: upstream timeout"]);
-		expect(result.source).toBe("live");
+		const { useCase } = buildUseCase(duplicatedProducts);
+		const result = await useCase.execute({ query: "leche" });
+
+		expect(result.results).toHaveLength(2);
+		expect(
+			result.results.find((product) => product.supermarket === "Lidl")
+				?.pricePerUnit,
+		).toBe(1.2);
 	});
 
-	it("formats non-Error rejection reasons safely", async () => {
-		const objectFailure = {
-			code: "RATE_LIMIT",
-			retryInSeconds: 30,
-		};
+	it("sorts results by price descending when sortBy is price_desc", async () => {
+		const products = [
+			makeProduct({ supermarket: "Lidl", pricePerUnit: 2.4 }),
+			makeProduct({ supermarket: "Aldi", pricePerUnit: 1.2 }),
+			makeProduct({ supermarket: "Carrefour", pricePerUnit: 1.9 }),
+		];
 
-		const failingScraper: SupermarketSearchPort = {
-			name: "JsonFail",
-			search: vi.fn().mockRejectedValue(objectFailure),
-			isCircuitOpen: false,
-			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
-		};
+		const { useCase } = buildUseCase(products);
+		const result = await useCase.execute({
+			query: "leche",
+			sortBy: "price_desc",
+		});
 
-		const useCase = new SearchProductsUseCase([failingScraper]);
-		const result = await useCase.search("rice");
-
-		expect(result.results).toEqual([]);
-		expect(result.warnings).toEqual([
-			'JsonFail: {"code":"RATE_LIMIT","retryInSeconds":30}',
+		expect(result.results.map((product) => product.pricePerUnit)).toEqual([
+			2.4, 1.9, 1.2,
 		]);
+	});
+
+	it("does not trigger refresh when query is empty", async () => {
+		const { useCase, backgroundRefreshQueue } = buildUseCase([]);
+		const result = await useCase.execute({ query: "" });
+
+		expect(backgroundRefreshQueue.enqueue).not.toHaveBeenCalled();
+		expect(result.isRefreshing).toBeUndefined();
+		expect(result.refreshReason).toBeUndefined();
+	});
+
+	it("marks refresh metadata when queue accepts refresh request", async () => {
+		const { useCase, backgroundRefreshQueue } = buildUseCase([], true);
+		const result = await useCase.execute({ query: "leche" });
+
+		expect(backgroundRefreshQueue.enqueue).toHaveBeenCalledWith("leche");
+		expect(result.isRefreshing).toBe(true);
+		expect(result.refreshReason).toBe("empty");
+	});
+
+	it("does not expose refresh metadata when queue rejects refresh request", async () => {
+		const { useCase } = buildUseCase([], false);
+		const result = await useCase.execute({ query: "leche" });
+
+		expect(result.isRefreshing).toBeUndefined();
+		expect(result.refreshReason).toBeUndefined();
 	});
 });

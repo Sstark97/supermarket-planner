@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import type { SearchProductsUseCase } from "../application/use-cases/search/SearchProductsUseCase";
+import type { SearchProductsUseCasePort } from "../application/ports/incoming/SearchProductsUseCasePort";
 
 const searchQuerySchema = z.object({
 	q: z.string().max(100).optional(),
@@ -10,7 +10,7 @@ const searchQuerySchema = z.object({
 });
 
 export class SearchController {
-	constructor(private readonly searchProductsUseCase: SearchProductsUseCase) {}
+	constructor(private readonly searchProductsUseCase: SearchProductsUseCasePort) {}
 
 	search = async (
 		req: Request,
@@ -29,29 +29,14 @@ export class SearchController {
 
 		try {
 			const { q, category, supermarket, sortBy } = parseResult.data;
-			const result = await this.searchProductsUseCase.searchFromDatabase(
-				q,
+			const result = await this.searchProductsUseCase.execute({
+				query: q,
 				category,
 				supermarket,
 				sortBy,
-			);
-
-			const shouldRequestRefresh =
-				Boolean(q?.trim()) && result.needsBackgroundRefresh;
-			const refreshTriggered = shouldRequestRefresh
-				? this.searchProductsUseCase.requestBackgroundRefresh(q!.trim())
-				: false;
-
-			const { needsBackgroundRefresh, refreshReason, ...publicResult } = result;
-			res.json({
-				...publicResult,
-				...(refreshTriggered
-					? {
-							isRefreshing: true,
-							refreshReason,
-						}
-					: {}),
 			});
+
+			res.json(result);
 		} catch (error) {
 			next(error);
 		}
