@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AldiScraper } from "./AldiScraper";
+import { AldiScraperAdapter } from "./AldiScraperAdapter";
 
 const okJsonResponse = (results: unknown[]) => ({
 	ok: true,
@@ -7,7 +7,7 @@ const okJsonResponse = (results: unknown[]) => ({
 	json: vi.fn().mockResolvedValue({ results }),
 });
 
-describe("AldiScraper", () => {
+describe("AldiScraperAdapter", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
@@ -21,7 +21,7 @@ describe("AldiScraper", () => {
 			}),
 		);
 
-		const scraper = new AldiScraper();
+		const scraper = new AldiScraperAdapter();
 
 		await expect(scraper.search("yogur")).rejects.toThrow(
 			"Aldi API failed: Service Unavailable",
@@ -39,7 +39,7 @@ describe("AldiScraper", () => {
 			);
 		vi.stubGlobal("fetch", fetchMock);
 
-		const scraper = new AldiScraper();
+		const scraper = new AldiScraperAdapter();
 		await scraper.search("leche");
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -64,7 +64,7 @@ describe("AldiScraper", () => {
 			);
 		vi.stubGlobal("fetch", fetchMock);
 
-		const scraper = new AldiScraper();
+		const scraper = new AldiScraperAdapter();
 		const results = await scraper.search("leche");
 
 		expect(fetchMock).toHaveBeenCalledTimes(2);

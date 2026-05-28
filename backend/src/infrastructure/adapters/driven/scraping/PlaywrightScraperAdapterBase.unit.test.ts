@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ScraperBase } from "./ScraperBase";
-import type { IProduct } from "../../interfaces/IProduct";
+import { PlaywrightScraperAdapterBase } from "./PlaywrightScraperAdapterBase";
+import type { IProduct } from "../../../../interfaces/IProduct";
 
-class TestScraper extends ScraperBase {
+class TestScraper extends PlaywrightScraperAdapterBase {
 	readonly name = "TestScraper";
 
 	constructor(
@@ -17,7 +17,7 @@ class TestScraper extends ScraperBase {
 	}
 }
 
-describe("ScraperBase", () => {
+describe("PlaywrightScraperAdapterBase", () => {
 	it("rethrows failures and opens circuit after reaching threshold", async () => {
 		let attempts = 0;
 		const scraper = new TestScraper(async () => {

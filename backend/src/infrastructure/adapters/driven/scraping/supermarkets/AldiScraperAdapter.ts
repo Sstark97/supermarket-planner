@@ -1,15 +1,15 @@
-import { ScraperBase } from "../base/ScraperBase";
+import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import type {
 	AldiAlgoliaHit,
 	AldiAlgoliaMultiQueryResponse,
-} from "../../application/dto/ScraperPayloads";
+} from "../../../../../application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../interfaces/IProduct";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
+} from "../../../../../domain/services/ProductMappingPolicy";
+import type { IProduct } from "../../../../../interfaces/IProduct";
+import { categorize } from "../../../../../utils/ProductCategorizer";
+import { logger } from "../../../../../utils/logger";
 
 const ALDI_ALGOLIA_URL =
 	"https://l9knu74io7-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.2)";
@@ -56,7 +56,7 @@ function buildParams(query: string, withCanaryStoreFilters: boolean): string {
  * Aldi Scraper — best-effort. Limited online catalog in Canarias.
  * Targets the ES Aldi shop search endpoint.
  */
-export class AldiScraper extends ScraperBase {
+export class AldiScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Aldi";
 	private readonly productMapper: ProductMapper;
 

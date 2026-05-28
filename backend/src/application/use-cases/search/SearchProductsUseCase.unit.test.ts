@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { SearchService } from "./SearchService";
-import type { IScraper } from "../interfaces/IScraper";
-import { ProductCategory, type IProduct } from "../interfaces/IProduct";
+import { SearchProductsUseCase } from "./SearchProductsUseCase";
+import type {
+	CircuitBreakerStatus,
+	SupermarketSearchPort,
+} from "../../ports/outgoing/SupermarketSearchPort";
+import { ProductCategory, type IProduct } from "../../../interfaces/IProduct";
 
-vi.mock("../db/prisma", () => ({
+vi.mock("../../../db/prisma", () => ({
 	prisma: {
 		product: {
 			findMany: vi.fn(),
@@ -27,20 +30,34 @@ const makeProduct = (
 	scrapedAt: new Date().toISOString(),
 });
 
-describe("SearchService.search", () => {
+const makeCircuitStatus = (
+	failureCount = 0,
+	threshold = 5,
+): CircuitBreakerStatus => ({
+	state: failureCount >= threshold ? "open" : "closed",
+	isOpen: failureCount >= threshold,
+	failureCount,
+	threshold,
+});
+
+describe("SearchProductsUseCase.search", () => {
 	it("captures rejected scrapers as warnings and keeps fulfilled results", async () => {
-		const okScraper: IScraper = {
+		const okScraper: SupermarketSearchPort = {
 			name: "OKMarket",
 			search: vi.fn().mockResolvedValue([makeProduct("Milk", "OKMarket", 1.2)]),
+			isCircuitOpen: false,
+			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(0)),
 		};
 
-		const failingScraper: IScraper = {
+		const failingScraper: SupermarketSearchPort = {
 			name: "FailMarket",
 			search: vi.fn().mockRejectedValue(new Error("upstream timeout")),
+			isCircuitOpen: false,
+			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
 		};
 
-		const service = new SearchService([okScraper, failingScraper]);
-		const result = await service.search("milk");
+		const useCase = new SearchProductsUseCase([okScraper, failingScraper]);
+		const result = await useCase.search("milk");
 
 		expect(result.results).toHaveLength(1);
 		expect(result.results[0].supermarket).toBe("OKMarket");
@@ -54,13 +71,15 @@ describe("SearchService.search", () => {
 			retryInSeconds: 30,
 		};
 
-		const failingScraper: IScraper = {
+		const failingScraper: SupermarketSearchPort = {
 			name: "JsonFail",
 			search: vi.fn().mockRejectedValue(objectFailure),
+			isCircuitOpen: false,
+			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
 		};
 
-		const service = new SearchService([failingScraper]);
-		const result = await service.search("rice");
+		const useCase = new SearchProductsUseCase([failingScraper]);
+		const result = await useCase.search("rice");
 
 		expect(result.results).toEqual([]);
 		expect(result.warnings).toEqual([

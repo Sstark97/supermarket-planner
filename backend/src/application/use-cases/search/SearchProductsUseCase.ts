@@ -1,9 +1,9 @@
-import type { IScraper } from "../interfaces/IScraper";
-import type { IProduct } from "../interfaces/IProduct";
-import { logger } from "../utils/logger";
-import { prisma } from "../db/prisma";
-import { buildProductSku } from "../utils/ProductIdentity";
-import { BackgroundRefreshQueue } from "./BackgroundRefreshQueue";
+import type { SupermarketSearchPort } from "../../ports/outgoing/SupermarketSearchPort";
+import type { IProduct } from "../../../interfaces/IProduct";
+import { logger } from "../../../utils/logger";
+import { prisma } from "../../../db/prisma";
+import { buildProductSku } from "../../../utils/ProductIdentity";
+import { BackgroundRefreshQueue } from "../../../infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
@@ -22,10 +22,10 @@ export interface DatabaseSearchResult extends SearchResult {
 	refreshReason?: "empty" | "stale";
 }
 
-export class SearchService {
+export class SearchProductsUseCase {
 	private readonly refreshQueue: BackgroundRefreshQueue;
 
-	constructor(private readonly scrapers: IScraper[]) {
+	constructor(private readonly scrapers: SupermarketSearchPort[]) {
 		this.refreshQueue = new BackgroundRefreshQueue(
 			this.refreshQueryInBackground,
 		);
@@ -35,11 +35,11 @@ export class SearchService {
 		query: string,
 	): Promise<void> => {
 		logger.info(
-			`[SearchService] Background refresh started for query: "${query}"`,
+			`[SearchProductsUseCase] Background refresh started for query: "${query}"`,
 		);
 		const liveResult = await this.search(query);
 
-		let saved = 0;
+		let savedProductsCount = 0;
 		for (const product of liveResult.results) {
 			const sku = buildProductSku(product);
 			await prisma.product.upsert({
@@ -74,11 +74,11 @@ export class SearchService {
 					scrapedAt: new Date(product.scrapedAt),
 				},
 			});
-			saved++;
+			savedProductsCount++;
 		}
 
 		logger.info(
-			`[SearchService] Background refresh completed for "${query}". Saved: ${saved}. Warnings: ${liveResult.warnings.length}`,
+			`[SearchProductsUseCase] Background refresh completed for "${query}". Saved: ${savedProductsCount}. Warnings: ${liveResult.warnings.length}`,
 		);
 	};
 
@@ -86,10 +86,6 @@ export class SearchService {
 		return this.refreshQueue.enqueue(query);
 	}
 
-	/**
-	 * Used by the Frontend API. Queries PostgreSQL and decides if data should
-	 * be refreshed asynchronously (cache-aside pattern).
-	 */
 	async searchFromDatabase(
 		query?: string,
 		category?: string,
@@ -97,7 +93,7 @@ export class SearchService {
 		sortBy?: string,
 	): Promise<DatabaseSearchResult> {
 		logger.info(
-			`[SearchService] searchFromDatabase - query: "${query}", category: "${category}", supermarket: "${supermarket}", sortBy: "${sortBy}"`,
+			`[SearchProductsUseCase] searchFromDatabase - query: "${query}", category: "${category}", supermarket: "${supermarket}", sortBy: "${sortBy}"`,
 		);
 
 		const normalizedQuery = query?.trim() ?? "";
@@ -123,7 +119,10 @@ export class SearchService {
 			return latest;
 		}, null);
 
-		const uniqueMap = new Map<string, (typeof rawResults)[number]>();
+		const uniqueProductsByStoreAndName = new Map<
+			string,
+			(typeof rawResults)[number]
+		>();
 		const normalizeName = (name: string) =>
 			name
 				.toLowerCase()
@@ -131,28 +130,31 @@ export class SearchService {
 				.replace(/\s{2,}/g, " ")
 				.trim();
 
-		rawResults.forEach((p) => {
-			const key = `${p.supermarket}:${normalizeName(p.name)}`;
+		rawResults.forEach((productRow) => {
+			const uniqueKey = `${productRow.supermarket}:${normalizeName(productRow.name)}`;
 			if (
-				!uniqueMap.has(key) ||
-				p.pricePerUnit < uniqueMap.get(key)!.pricePerUnit
+				!uniqueProductsByStoreAndName.has(uniqueKey) ||
+				productRow.pricePerUnit <
+					uniqueProductsByStoreAndName.get(uniqueKey)!.pricePerUnit
 			) {
-				uniqueMap.set(key, p);
+				uniqueProductsByStoreAndName.set(uniqueKey, productRow);
 			}
 		});
 
-		const results: IProduct[] = Array.from(uniqueMap.values()).map((p) => ({
-			id: p.id,
-			name: p.name,
-			supermarket: p.supermarket,
-			category: p.category as IProduct["category"],
-			price: p.price,
-			pricePerUnit: p.pricePerUnit,
-			unit: p.unit,
-			image: p.image || undefined,
-			url: p.url || undefined,
-			taxType: p.taxType as IProduct["taxType"],
-			scrapedAt: p.scrapedAt.toISOString(),
+		const results: IProduct[] = Array.from(
+			uniqueProductsByStoreAndName.values(),
+		).map((productRow) => ({
+			id: productRow.id,
+			name: productRow.name,
+			supermarket: productRow.supermarket,
+			category: productRow.category as IProduct["category"],
+			price: productRow.price,
+			pricePerUnit: productRow.pricePerUnit,
+			unit: productRow.unit,
+			image: productRow.image || undefined,
+			url: productRow.url || undefined,
+			taxType: productRow.taxType as IProduct["taxType"],
+			scrapedAt: productRow.scrapedAt.toISOString(),
 		}));
 
 		if (sortBy === "price_desc") {
@@ -161,11 +163,11 @@ export class SearchService {
 			results.sort((a, b) => a.pricePerUnit - b.pricePerUnit);
 		}
 
-		const isStale =
+		const hasStaleData =
 			latestScrapedAt !== null &&
 			Date.now() - latestScrapedAt.getTime() > STALE_THRESHOLD_MS;
-		const shouldRefresh =
-			Boolean(normalizedQuery) && (results.length === 0 || isStale);
+		const shouldRefreshInBackground =
+			Boolean(normalizedQuery) && (results.length === 0 || hasStaleData);
 
 		return {
 			query: normalizedQuery,
@@ -174,8 +176,8 @@ export class SearchService {
 			totalCount: results.length,
 			source: "database",
 			scrapedAt: new Date().toISOString(),
-			needsBackgroundRefresh: shouldRefresh,
-			refreshReason: shouldRefresh
+			needsBackgroundRefresh: shouldRefreshInBackground,
+			refreshReason: shouldRefreshInBackground
 				? results.length === 0
 					? "empty"
 					: "stale"
@@ -183,35 +185,36 @@ export class SearchService {
 		};
 	}
 
-	/**
-	 * Used by Cron and manual scraping to actually scrape live websites.
-	 */
 	async search(query: string): Promise<SearchResult> {
 		const scrapedAt = new Date().toISOString();
 		const warnings: string[] = [];
 
-		logger.info(`[SearchService] Starting parallel scrapers for: "${query}"`);
-		const start = Date.now();
+		logger.info(
+			`[SearchProductsUseCase] Starting parallel scrapers for: "${query}"`,
+		);
+		const searchStartedAt = Date.now();
 
 		const scraperTasks = this.scrapers.map(async (scraper) => {
-			const scraperStart = Date.now();
+			const scraperStartedAt = Date.now();
 			try {
 				const results = await scraper.search(query);
 				logger.info(
-					`[SearchService] ${scraper.name} completed: ${results.length} results in ${Date.now() - scraperStart}ms`,
+					`[SearchProductsUseCase] ${scraper.name} completed: ${results.length} results in ${Date.now() - scraperStartedAt}ms`,
 				);
 				return results;
-			} catch (err) {
+			} catch (error) {
 				logger.error(
-					`[SearchService] ${scraper.name} failed after ${Date.now() - scraperStart}ms: ${err}`,
+					`[SearchProductsUseCase] ${scraper.name} failed after ${Date.now() - scraperStartedAt}ms: ${error}`,
 				);
-				throw err;
+				throw error;
 			}
 		});
 
-		const settled = await Promise.allSettled(scraperTasks);
-		const totalTime = Date.now() - start;
-		logger.info(`[SearchService] All scrapers finished in ${totalTime}ms.`);
+		const settledResults = await Promise.allSettled(scraperTasks);
+		const totalElapsedMs = Date.now() - searchStartedAt;
+		logger.info(
+			`[SearchProductsUseCase] All scrapers finished in ${totalElapsedMs}ms.`,
+		);
 
 		const results: IProduct[] = [];
 
@@ -225,15 +228,15 @@ export class SearchService {
 			}
 		};
 
-		settled.forEach((outcome, index) => {
+		settledResults.forEach((outcome, index) => {
 			const scraperName = this.scrapers[index].name;
 			if (outcome.status === "fulfilled") {
 				results.push(...outcome.value);
 			} else {
-				const reason = formatRejectionReason(
-					(outcome as PromiseRejectedResult).reason,
+				const reason = formatRejectionReason(outcome.reason);
+				logger.error(
+					`[SearchProductsUseCase] ${scraperName} rejected: ${reason}`,
 				);
-				logger.error(`[SearchService] ${scraperName} rejected: ${reason}`);
 				warnings.push(`${scraperName}: ${reason}`);
 			}
 		});

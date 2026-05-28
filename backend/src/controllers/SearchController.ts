@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import type { SearchService } from "../services/SearchService";
+import type { SearchProductsUseCase } from "../application/use-cases/search/SearchProductsUseCase";
 
 const searchQuerySchema = z.object({
 	q: z.string().max(100).optional(),
@@ -10,7 +10,7 @@ const searchQuerySchema = z.object({
 });
 
 export class SearchController {
-	constructor(private readonly searchService: SearchService) {}
+	constructor(private readonly searchProductsUseCase: SearchProductsUseCase) {}
 
 	search = async (
 		req: Request,
@@ -29,8 +29,7 @@ export class SearchController {
 
 		try {
 			const { q, category, supermarket, sortBy } = parseResult.data;
-			// Serve from Database with filters (cache-aside read path)
-			const result = await this.searchService.searchFromDatabase(
+			const result = await this.searchProductsUseCase.searchFromDatabase(
 				q,
 				category,
 				supermarket,
@@ -40,7 +39,7 @@ export class SearchController {
 			const shouldRequestRefresh =
 				Boolean(q?.trim()) && result.needsBackgroundRefresh;
 			const refreshTriggered = shouldRequestRefresh
-				? this.searchService.requestBackgroundRefresh(q!.trim())
+				? this.searchProductsUseCase.requestBackgroundRefresh(q!.trim())
 				: false;
 
 			const { needsBackgroundRefresh, refreshReason, ...publicResult } = result;

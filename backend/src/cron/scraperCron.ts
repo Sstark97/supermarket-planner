@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { logger } from "../utils/logger";
-import type { SearchService } from "../services/SearchService";
+import type { SearchProductsUseCase } from "../application/use-cases/search/SearchProductsUseCase";
 import { prisma } from "../db/prisma";
 import { buildProductSku } from "../utils/ProductIdentity";
 
@@ -29,7 +29,7 @@ const CRON_QUERIES = [
 ];
 
 export class ScraperCron {
-	constructor(private readonly searchService: SearchService) {}
+	constructor(private readonly searchProductsUseCase: SearchProductsUseCase) {}
 
 	public start() {
 		// Run at 04:00 AM every day (Canary Islands time if server time is correctly set)
@@ -51,7 +51,7 @@ export class ScraperCron {
 		for (const query of CRON_QUERIES) {
 			logger.info(`[CRON] Scraping predefined query: "${query}"`);
 			try {
-				const result = await this.searchService.search(query);
+				const result = await this.searchProductsUseCase.search(query);
 
 				// Save to PostgreSQL (idempotent upsert)
 				for (const p of result.results) {
