@@ -4,13 +4,14 @@ import { config } from "./config";
 import { logger } from "./utils/logger";
 import { BrowserManager } from "./infrastructure/adapters/driven/scraping/strategies/BrowserManager";
 import { SearchProductsUseCase } from "./application/use-cases/search/SearchProductsUseCase";
+import { TriggerManualScrapeUseCase } from "./application/use-cases/search/TriggerManualScrapeUseCase";
+import { RefreshProductsCatalogUseCase } from "./application/use-cases/search/RefreshProductsCatalogUseCase";
 import { SearchController } from "./controllers/SearchController";
 import { errorHandler } from "./middlewares/errorHandler";
 import { ScraperCron } from "./cron/scraperCron";
-import { prisma } from "./db/prisma";
-import { buildProductSku } from "./utils/ProductIdentity";
+import { PrismaProductRepository } from "./infrastructure/adapters/driven/persistence/prisma/PrismaProductRepository";
+import { InMemoryBackgroundRefreshQueueAdapter } from "./infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
 
-// Scraper implementations
 import { HiperDinoScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
 import { MercadonaScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
 import { CarrefourScraperAdapter } from "./infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
@@ -23,7 +24,6 @@ async function bootstrap() {
 	app.use(cors());
 	app.use(express.json());
 
-	// --- Register all scrapers here (OCP: just add new ones to this array) ---
 	const scrapers = [
 		new HiperDinoScraperAdapter(),
 		new MercadonaScraperAdapter(),
@@ -32,11 +32,27 @@ async function bootstrap() {
 		new AldiScraperAdapter(),
 	];
 
-	const searchProductsUseCase = new SearchProductsUseCase(scrapers);
+	const triggerManualScrapeUseCase = new TriggerManualScrapeUseCase(scrapers);
+	const productCatalogRepository = new PrismaProductRepository();
+	const refreshProductsCatalogUseCase = new RefreshProductsCatalogUseCase(
+		triggerManualScrapeUseCase,
+		productCatalogRepository,
+	);
+	const backgroundRefreshQueue = new InMemoryBackgroundRefreshQueueAdapter(
+		async (query) => {
+			await refreshProductsCatalogUseCase.execute({ query });
+		},
+	);
+	const searchProductsUseCase = new SearchProductsUseCase(
+		productCatalogRepository,
+		backgroundRefreshQueue,
+	);
 	const searchController = new SearchController(searchProductsUseCase);
-	const scraperCron = new ScraperCron(searchProductsUseCase);
+	const scraperCron = new ScraperCron(
+		triggerManualScrapeUseCase,
+		productCatalogRepository,
+	);
 
-	// --- Routes ---
 	app.get("/health", (_req, res) => {
 		res.json({
 			status: "ok",
@@ -56,75 +72,37 @@ async function bootstrap() {
 
 	app.post("/admin/scrape/:query", async (req, res) => {
 		try {
-			const q = req.params.query;
-			logger.info(`Manual scrape triggered for: ${q}`);
-			const result = await searchProductsUseCase.search(q);
+			const query = req.params.query;
+			logger.info(`Manual scrape triggered for: ${query}`);
+			const result = await triggerManualScrapeUseCase.execute({ query });
+			const savedProductsCount = await productCatalogRepository.save(
+				result.results,
+			);
 
-			let saved = 0;
-			for (const p of result.results) {
-				const sku = buildProductSku(p);
-				await prisma.product.upsert({
-					where: {
-						supermarket_sku: {
-							supermarket: p.supermarket,
-							sku,
-						},
-					},
-					update: {
-						name: p.name,
-						category: p.category,
-						price: p.price,
-						pricePerUnit: p.pricePerUnit,
-						unit: p.unit,
-						image: p.image,
-						url: p.url,
-						taxType: p.taxType,
-						scrapedAt: new Date(p.scrapedAt),
-					},
-					create: {
-						name: p.name,
-						supermarket: p.supermarket,
-						category: p.category,
-						sku,
-						price: p.price,
-						pricePerUnit: p.pricePerUnit,
-						unit: p.unit,
-						image: p.image,
-						url: p.url,
-						taxType: p.taxType,
-						scrapedAt: new Date(p.scrapedAt),
-					},
-				});
-				saved++;
-			}
 			res.json({
-				message: `Scraped ${saved} products for "${q}"`,
+				message: `Scraped ${savedProductsCount} products for "${query}"`,
 				warnings: result.warnings,
 				sample: result.results.slice(0, 10),
 			});
-		} catch (err) {
-			logger.error("Manual scrape failed:", err);
-			res.status(500).json({ error: String(err) });
+		} catch (error) {
+			logger.error("Manual scrape failed:", error);
+			res.status(500).json({ error: String(error) });
 		}
 	});
 
 	app.post("/admin/scrape-all", (_req, res) => {
-		// Run in background so we don't timeout the request
-		scraperCron.runDailyScrape().catch((err) => {
-			logger.error("Manual scrape-all failed:", err);
+		scraperCron.runDailyScrape().catch((error) => {
+			logger.error("Manual scrape-all failed:", error);
 		});
 		res.json({ message: "Daily scrape full loop triggered in background." });
 	});
 
-	// Global error handler (must be last)
 	app.use(errorHandler);
 
-	// --- Start browser (warm-up) ---
 	logger.info("Warming up Playwright Chromium browser...");
 	await BrowserManager.getInstance().getBrowser();
 	logger.info("Browser ready.");
 
-	// --- Start Cron Jobs ---
 	scraperCron.start();
 
 	app.listen(config.port, () => {
@@ -137,7 +115,6 @@ async function bootstrap() {
 		logger.info(`   GET /health           — check scraper circuit status`);
 	});
 
-	// Graceful shutdown
 	process.on("SIGTERM", async () => {
 		logger.info("SIGTERM received. Shutting down...");
 		await BrowserManager.getInstance().shutdown();
@@ -151,7 +128,7 @@ async function bootstrap() {
 	});
 }
 
-bootstrap().catch((err) => {
-	console.error("Fatal startup error:", err);
+bootstrap().catch((error) => {
+	console.error("Fatal startup error:", error);
 	process.exit(1);
 });
