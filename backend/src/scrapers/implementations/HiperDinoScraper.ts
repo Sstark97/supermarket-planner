@@ -1,19 +1,18 @@
 import { ScraperBase } from "../base/ScraperBase";
+import type { HiperDinoRawProduct } from "../../application/dto/ScraperPayloads";
+import {
+	defaultProductMapper,
+	type ProductMapper,
+} from "../../domain/services/ProductMappingPolicy";
 import type { IProduct } from "../../interfaces/IProduct";
+import { categorize } from "../../utils/ProductCategorizer";
+import { logger } from "../../utils/logger";
 import { BrowserManager } from "../strategies/BrowserManager";
 import {
 	blockUnnecessaryResources,
 	getRandomUserAgent,
 	randomDelay,
 } from "../strategies/StealthHelper";
-import {
-	normalizePricePerUnit,
-	detectTaxType,
-} from "../../utils/PriceNormalizer";
-import { categorize } from "../../utils/ProductCategorizer";
-import { logger } from "../../utils/logger";
-
-import { v4 as uuidv4 } from "uuid";
 
 const UNIT_PATTERN =
 	/(\d+[.,]?\d*)\s?(kg|g|gr|l|ml|cl|ud|u|unid|unidad|pack|botella|bote|lata|sobre)/i;
@@ -38,6 +37,12 @@ export function extractHiperDinoUnit(
  */
 export class HiperDinoScraper extends ScraperBase {
 	readonly name = "HiperDino";
+	private readonly productMapper: ProductMapper;
+
+	constructor(productMapper: ProductMapper = defaultProductMapper) {
+		super();
+		this.productMapper = productMapper;
+	}
 
 	protected async scrape(query: string): Promise<IProduct[]> {
 		const ua = getRandomUserAgent();
@@ -62,7 +67,7 @@ export class HiperDinoScraper extends ScraperBase {
 				);
 
 			logger.info(`[HiperDino] Evaluating DOM...`);
-			const rawProducts = await page.evaluate(() => {
+			const rawProducts = await page.evaluate<HiperDinoRawProduct[]>(() => {
 				const items = document.querySelectorAll(".item--container");
 				return Array.from(items).map((el) => {
 					const name =
@@ -93,22 +98,21 @@ export class HiperDinoScraper extends ScraperBase {
 				rawProducts
 					.filter((p) => p.name && p.price)
 					.map(async (p) => {
-						const unit = extractHiperDinoUnit(p.name, p.descriptionTexts);
-						const normalizedPrice = normalizePricePerUnit(p.price, unit);
+						const quantityRaw = extractHiperDinoUnit(
+							p.name,
+							p.descriptionTexts,
+						);
 						const category = await categorize(p.name);
-						return {
-							id: uuidv4(),
-							name: p.name,
+						return this.productMapper.toDomain({
 							supermarket: this.name,
+							name: p.name,
 							category,
-							price: normalizedPrice.price,
-							pricePerUnit: normalizedPrice.pricePerUnit,
-							unit: normalizedPrice.unit,
+							priceRaw: p.price,
+							quantityRaw,
 							image: p.image || undefined,
 							url: p.link || undefined,
-							taxType: detectTaxType(`${p.name} IGIC`), // HiperDino is in Canarias → IGIC
-							scrapedAt: new Date().toISOString(),
-						} satisfies IProduct;
+							taxHint: `${p.name} IGIC`,
+						});
 					}),
 			);
 

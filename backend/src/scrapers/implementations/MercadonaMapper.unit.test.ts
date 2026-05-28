@@ -1,10 +1,35 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ProductMapper } from "../../domain/services/ProductMappingPolicy";
 import { ProductCategory } from "../../interfaces/IProduct";
+import { categorize } from "../../utils/ProductCategorizer";
 import { mapMercadonaProducts } from "./MercadonaMapper";
 import type { MercadonaApiProduct } from "./types";
 
+vi.mock("../../utils/ProductCategorizer", () => ({
+	categorize: vi.fn(async (productName: string) => {
+		const normalized = productName.toLowerCase();
+		if (normalized.includes("leche")) return ProductCategory.DAIRY;
+		if (normalized.includes("tomate")) return ProductCategory.FRUITS_VEG;
+		if (normalized.includes("arroz")) return ProductCategory.CEREALS_PASTA;
+		if (normalized.includes("pan")) return ProductCategory.BAKERY;
+		return ProductCategory.OTHER;
+	}),
+}));
+
+function createTestProductMapper(id: string, nowIso: string): ProductMapper {
+	return new ProductMapper({
+		createId: () => id,
+		nowIso: () => nowIso,
+	});
+}
+
 describe("MercadonaMapper", () => {
 	const nowIso = "2026-01-01T10:00:00.000Z";
+	const categorizeMock = vi.mocked(categorize);
+
+	beforeEach(() => {
+		categorizeMock.mockClear();
+	});
 
 	it("maps display_name, thumbnail, id URL, category and tax type", async () => {
 		const products: MercadonaApiProduct[] = [
@@ -21,9 +46,7 @@ describe("MercadonaMapper", () => {
 		];
 
 		const mapped = await mapMercadonaProducts(products, {
-			categorizeFn: vi.fn().mockResolvedValue(ProductCategory.DAIRY),
-			uuidFn: () => "fixed-id",
-			nowFn: () => nowIso,
+			productMapper: createTestProductMapper("fixed-id", nowIso),
 			supermarketName: "Mercadona",
 		});
 
@@ -38,6 +61,7 @@ describe("MercadonaMapper", () => {
 			taxType: "IGIC",
 			scrapedAt: nowIso,
 		});
+		expect(categorizeMock).toHaveBeenCalledWith("Leche entera");
 	});
 
 	it("prefers price_instructions.unit_price over bulk_price", async () => {
@@ -55,9 +79,7 @@ describe("MercadonaMapper", () => {
 				},
 			],
 			{
-				categorizeFn: vi.fn().mockResolvedValue(ProductCategory.FRUITS_VEG),
-				uuidFn: () => "id-1",
-				nowFn: () => nowIso,
+				productMapper: createTestProductMapper("id-1", nowIso),
 			},
 		);
 
@@ -78,9 +100,7 @@ describe("MercadonaMapper", () => {
 				},
 			],
 			{
-				categorizeFn: vi.fn().mockResolvedValue(ProductCategory.CEREALS_PASTA),
-				uuidFn: () => "id-2",
-				nowFn: () => nowIso,
+				productMapper: createTestProductMapper("id-2", nowIso),
 			},
 		);
 
@@ -99,9 +119,7 @@ describe("MercadonaMapper", () => {
 				},
 			],
 			{
-				categorizeFn: vi.fn().mockResolvedValue(ProductCategory.BAKERY),
-				uuidFn: () => "id-3",
-				nowFn: () => nowIso,
+				productMapper: createTestProductMapper("id-3", nowIso),
 			},
 		);
 
