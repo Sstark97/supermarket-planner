@@ -1,20 +1,25 @@
-import React from "react";
 import { ProductCard } from "./ProductCard";
-import { fetchProducts } from "../lib/api";
+import { ProductGateway } from "@/lib/http/ProductGateway";
 
 export async function ProductGrid({
+	productGateway,
 	query,
 	category,
 	supermarket,
 	sortBy,
 }: {
+	productGateway: ProductGateway;
 	query?: string;
 	category?: string;
 	supermarket?: string;
 	sortBy?: string;
 }) {
-	// If no query and no category, we pass empty string to get all/default items (adjust according to API)
-	const products = await fetchProducts(query, category, supermarket, sortBy);
+	const products = await productGateway.search({
+		query,
+		category,
+		supermarket,
+		sortBy,
+	});
 
 	if (products.length === 0) {
 		return (
