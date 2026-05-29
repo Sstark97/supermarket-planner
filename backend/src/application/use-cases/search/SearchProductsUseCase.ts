@@ -28,10 +28,7 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 
 		const deduplicatedProducts =
 			this.deduplicateBySupermarketAndName(catalogProducts);
-		const sortedProducts = this.sortByPricePerUnit(
-			deduplicatedProducts,
-			input.sortBy,
-		);
+		const sortedProducts = this.sortByPrice(deduplicatedProducts, input.sortBy);
 		const latestScrapedAt = this.findLatestScrapedAt(catalogProducts);
 		const refreshDecision = this.computeRefreshDecision(
 			normalizedQuery,
@@ -80,21 +77,17 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 		return Array.from(uniqueProductsByStoreAndName.values());
 	}
 
-	private sortByPricePerUnit(
+	private sortByPrice(
 		products: IProduct[],
 		sortBy?: "price_asc" | "price_desc",
 	): IProduct[] {
 		const sortedProducts = [...products];
 		if (sortBy === "price_desc") {
-			sortedProducts.sort(
-				(left, right) => right.pricePerUnit - left.pricePerUnit,
-			);
+			sortedProducts.sort((left, right) => right.price - left.price);
 			return sortedProducts;
 		}
 
-		sortedProducts.sort(
-			(left, right) => left.pricePerUnit - right.pricePerUnit,
-		);
+		sortedProducts.sort((left, right) => left.price - right.price);
 		return sortedProducts;
 	}
 
