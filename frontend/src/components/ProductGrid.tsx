@@ -14,12 +14,28 @@ export async function ProductGrid({
 	supermarket?: string;
 	sortBy?: string;
 }) {
-	const products = await productGateway.search({
-		query,
-		category,
-		supermarket,
-		sortBy,
-	});
+	let products = [];
+	try {
+		products = await productGateway.search({
+			query,
+			category,
+			supermarket,
+			sortBy,
+		});
+	} catch (error) {
+		console.error("[ProductGrid] Failed to load products", error);
+		return (
+			<div className="py-20 text-center flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-red-200 m-8">
+				<span className="text-4xl mb-4">⚠️</span>
+				<h3 className="text-xl font-bold text-slate-800 mb-2">
+					No se pudieron cargar los productos
+				</h3>
+				<p className="text-slate-500 max-w-md">
+					Hubo un error temporal con el servicio. Reintentá en unos segundos.
+				</p>
+			</div>
+		);
+	}
 
 	if (products.length === 0) {
 		return (

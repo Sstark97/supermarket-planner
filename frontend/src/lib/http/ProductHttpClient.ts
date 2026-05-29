@@ -8,6 +8,7 @@ import { ProductGateway } from "./ProductGateway";
 type ProductApiResponse = {
 	results?: IProduct[];
 	error?: string;
+	details?: string;
 };
 
 export class ProductHttpClient implements ProductGateway {
@@ -19,20 +20,18 @@ export class ProductHttpClient implements ProductGateway {
 		const queryString = params.toString();
 		const url = `${this.baseUrl}/api/products${queryString ? `?${queryString}` : ""}`;
 
-		try {
-			const res = await fetch(url, {
-				cache: "no-store",
-			});
+		const res = await fetch(url, {
+			cache: "no-store",
+		});
 
-			if (!res.ok) {
-				throw new Error(`API Error: ${res.status}`);
-			}
-
-			const json = (await res.json()) as ProductApiResponse;
-			return Array.isArray(json?.results) ? json.results : [];
-		} catch (error) {
-			console.error("[ProductHttpClient] search failed", error);
-			return [];
+		const json = (await res.json()) as ProductApiResponse;
+		if (!res.ok) {
+			const detailsSuffix = json.details ? ` (${json.details})` : "";
+			throw new Error(
+				`Product API error ${res.status}: ${json.error || "Unknown error"}${detailsSuffix}`,
+			);
 		}
+
+		return Array.isArray(json?.results) ? json.results : [];
 	}
 }

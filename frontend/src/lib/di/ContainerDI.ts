@@ -21,7 +21,7 @@ export class ContainerDI {
 		const protocol = this.headerReader.get("x-forwarded-proto") ?? "http";
 		const baseUrl = host
 			? `${protocol}://${host}`
-			: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+			: process.env.APP_URL || "http://localhost:3001";
 
 		return new ProductHttpClient(baseUrl);
 	}
