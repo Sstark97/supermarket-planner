@@ -29,3 +29,13 @@ backend/debug/
 coverage/
 # Local Pi runtime state
 .atl/
+.pi/
+.claude/
+backend/.pi-lens/
+frontend/.pi-lens/
+
+# Local working notes/artifacts
+context.md
+plan.md
+data/
+docs/
