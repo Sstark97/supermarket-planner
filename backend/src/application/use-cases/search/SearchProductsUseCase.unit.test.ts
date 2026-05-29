@@ -79,9 +79,9 @@ describe("SearchProductsUseCase.execute", () => {
 
 	it("sorts results by price descending when sortBy is price_desc", async () => {
 		const products = [
-			makeProduct({ supermarket: "Lidl", pricePerUnit: 2.4 }),
-			makeProduct({ supermarket: "Aldi", pricePerUnit: 1.2 }),
-			makeProduct({ supermarket: "Carrefour", pricePerUnit: 1.9 }),
+			makeProduct({ supermarket: "Lidl", price: 2.4 }),
+			makeProduct({ supermarket: "Aldi", price: 1.2 }),
+			makeProduct({ supermarket: "Carrefour", price: 1.9 }),
 		];
 
 		const { useCase } = buildUseCase(products);
@@ -90,7 +90,7 @@ describe("SearchProductsUseCase.execute", () => {
 			sortBy: "price_desc",
 		});
 
-		expect(result.results.map((product) => product.pricePerUnit)).toEqual([
+		expect(result.results.map((product) => product.price)).toEqual([
 			2.4, 1.9, 1.2,
 		]);
 	});
