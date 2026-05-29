@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import type { SearchProductsUseCasePort } from "../application/ports/incoming/SearchProductsUseCasePort";
+import type { SearchProductsUseCasePort } from "../../../../application/ports/incoming/SearchProductsUseCasePort";
 
 const searchQuerySchema = z.object({
 	q: z.string().max(100).optional(),
