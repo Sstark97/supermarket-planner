@@ -3,7 +3,7 @@ import supertest from "supertest";
 
 // --- Module-level mocks must be hoisted before dynamic imports resolve ---
 
-vi.mock("../../db/prisma", () => ({
+vi.mock("../adapters/driven/persistence/prisma/prisma", () => ({
 	prisma: {
 		product: {
 			findMany: vi.fn().mockResolvedValue([]),

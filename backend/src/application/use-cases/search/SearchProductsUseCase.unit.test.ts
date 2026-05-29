@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
 import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
-import { ProductCategory, type IProduct } from "../../../interfaces/IProduct";
+import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
 import { SearchProductsUseCase } from "./SearchProductsUseCase";
 
 let productSequence = 0;

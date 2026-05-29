@@ -1,4 +1,4 @@
-import type { ProductCategory } from "../../../interfaces/IProduct";
+import type { ProductCategory } from "../../../domain/entities/IProduct";
 
 export interface KeywordCategorizer {
 	match(productName: string): ProductCategory | undefined;

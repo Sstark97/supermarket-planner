@@ -4,7 +4,7 @@ import { RefreshProductsCatalogUseCase } from "../../application/use-cases/searc
 import { SearchProductsUseCase } from "../../application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "../../application/use-cases/search/TriggerManualScrapeUseCase";
 import { SearchController } from "../../controllers/SearchController";
-import { ScraperCron } from "../../cron/scraperCron";
+import { ScraperCron } from "../cron/scraperCron";
 import { PrismaProductRepository } from "../adapters/driven/persistence/prisma/PrismaProductRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "../adapters/driven/queue/BackgroundRefreshQueue";
 import { AldiScraperAdapter } from "../adapters/driven/scraping/supermarkets/AldiScraperAdapter";
@@ -12,8 +12,8 @@ import { CarrefourScraperAdapter } from "../adapters/driven/scraping/supermarket
 import { HiperDinoScraperAdapter } from "../adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
 import { LidlScraperAdapter } from "../adapters/driven/scraping/supermarkets/LidlScraperAdapter";
 import { MercadonaScraperAdapter } from "../adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
-import { logger } from "../../utils/logger";
-import { errorHandler } from "../../middlewares/errorHandler";
+import { logger } from "../logging/logger";
+import { errorHandler } from "../http/errorHandler";
 import type { PlaywrightScraperAdapterBase } from "../adapters/driven/scraping/PlaywrightScraperAdapterBase";
 
 export interface BootstrappedBackendApplication {

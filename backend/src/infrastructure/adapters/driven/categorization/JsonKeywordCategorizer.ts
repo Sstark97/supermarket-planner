@@ -1,4 +1,4 @@
-import type { ProductCategory } from "../../../../interfaces/IProduct";
+import type { ProductCategory } from "../../../../domain/entities/IProduct";
 import type { KeywordCategorizer } from "../../../../application/ports/outgoing/KeywordCategorizer";
 import keywordMapJson from "../../../config/category-keywords.json";
 

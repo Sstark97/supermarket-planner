@@ -3,9 +3,9 @@ import {
 	defaultProductMapper,
 	type ProductMapper,
 } from "../../../../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../../../../interfaces/IProduct";
-import { categorize } from "../../../../../utils/ProductCategorizer";
-import { logger } from "../../../../../utils/logger";
+import type { IProduct } from "../../../../../domain/entities/IProduct";
+import { categorize } from "../../categorization/ProductCategorizer";
+import { logger } from "../../../../logging/logger";
 import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import { BrowserManager } from "../strategies/BrowserManager";
 import {

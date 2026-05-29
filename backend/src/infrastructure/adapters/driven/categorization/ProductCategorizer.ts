@@ -1,8 +1,8 @@
-import { config } from "../config";
-import { logger } from "./logger";
-import { ProductCategorizationUseCase } from "../application/use-cases/categorization/ProductCategorizationUseCase";
-import { GeminiAiCategorizer } from "../infrastructure/adapters/driven/ai/GeminiAiCategorizer";
-import { JsonKeywordCategorizer } from "../infrastructure/adapters/driven/categorization/JsonKeywordCategorizer";
+import { config } from "../../../config";
+import { logger } from "../../../logging/logger";
+import { ProductCategorizationUseCase } from "../../../../application/use-cases/categorization/ProductCategorizationUseCase";
+import { GeminiAiCategorizer } from "../ai/GeminiAiCategorizer";
+import { JsonKeywordCategorizer } from "./JsonKeywordCategorizer";
 
 function createCategorizationUseCase(): ProductCategorizationUseCase {
 	const keywordCategorizer = new JsonKeywordCategorizer();

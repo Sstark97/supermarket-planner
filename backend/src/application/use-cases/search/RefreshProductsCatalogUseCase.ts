@@ -1,6 +1,6 @@
 import type { TriggerManualScrapeUseCasePort } from "../../ports/incoming/TriggerManualScrapeUseCasePort";
 import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
-import { logger } from "../../../utils/logger";
+import { logger } from "../../../infrastructure/logging/logger";
 import type { TriggerManualScrapeInput } from "./contracts";
 
 export class RefreshProductsCatalogUseCase {

@@ -1,7 +1,7 @@
-import { config } from "./config";
+import { config } from "./infrastructure/config/index";
 import { BackendCompositionBootstrap } from "./infrastructure/composition/bootstrap";
 import { BrowserManager } from "./infrastructure/adapters/driven/scraping/strategies/BrowserManager";
-import { logger } from "./utils/logger";
+import { logger } from "./infrastructure/logging/logger";
 
 async function bootstrap() {
 	const { app, scrapers, scraperCron } =

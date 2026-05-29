@@ -1,4 +1,4 @@
-import { ProductCategory } from "../../../interfaces/IProduct";
+import { ProductCategory } from "../../../domain/entities/IProduct";
 import type { KeywordCategorizer } from "../../ports/outgoing/KeywordCategorizer";
 import type { AiCategorizer } from "../../ports/outgoing/AiCategorizer";
 

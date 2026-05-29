@@ -1,8 +1,8 @@
 import type { SearchProductsUseCasePort } from "../../ports/incoming/SearchProductsUseCasePort";
 import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
 import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
-import type { IProduct } from "../../../interfaces/IProduct";
-import { logger } from "../../../utils/logger";
+import type { IProduct } from "../../../domain/entities/IProduct";
+import { logger } from "../../../infrastructure/logging/logger";
 import type { SearchProductsInput, SearchResult } from "./contracts";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
