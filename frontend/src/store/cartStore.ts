@@ -1,67 +1,99 @@
-import { create } from 'zustand';
-import { IProduct } from '../types';
+import { create } from "zustand";
+import { IProduct } from "../types";
 
 export interface CartItem {
-    product: IProduct;
-    quantity: number;
+	itemKey: string;
+	product: IProduct;
+	quantity: number;
 }
+
+type CartRegistry = Record<string, CartItem>;
 
 interface CartState {
-    items: CartItem[];
-    isOpen: boolean;
-    addItem: (product: IProduct) => void;
-    removeItem: (productId: string) => void;
-    updateQuantity: (productId: string, delta: number) => void;
-    setIsOpen: (isOpen: boolean) => void;
-    totalItems: () => number;
-    totalPrice: () => number;
+	itemRegistry: CartRegistry;
+	items: CartItem[];
+	totalItems: number;
+	totalPrice: number;
+	addItem: (product: IProduct) => void;
+	removeItem: (itemKey: string) => void;
+	updateQuantity: (itemKey: string, delta: number) => void;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-    items: [],
-    isOpen: false,
+class CartStateProjector {
+	static createItemKey(product: Pick<IProduct, "supermarket" | "id">): string {
+		return `${product.supermarket}:${product.id}`;
+	}
 
-    addItem: (product) => {
-        set((state) => {
-            const existing = state.items.find((item) => item.product.id === product.id);
-            if (existing) {
-                return {
-                    items: state.items.map((item) =>
-                        item.product.id === product.id
-                            ? { ...item, quantity: item.quantity + 1 }
-                            : item
-                    ),
-                };
-            }
-            return { items: [...state.items, { product, quantity: 1 }] };
-        });
-    },
+	static toSnapshot(itemRegistry: CartRegistry) {
+		const items = Object.values(itemRegistry);
+		let totalItems = 0;
+		let totalPrice = 0;
 
-    removeItem: (productId) => {
-        set((state) => ({
-            items: state.items.filter((item) => item.product.id !== productId),
-        }));
-    },
+		for (const item of items) {
+			totalItems += item.quantity;
+			totalPrice += item.product.price * item.quantity;
+		}
 
-    updateQuantity: (productId, delta) => {
-        set((state) => ({
-            items: state.items.map((item) => {
-                if (item.product.id === productId) {
-                    const newQuantity = item.quantity + delta;
-                    return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
-                }
-                return item;
-            }).filter((item) => item.quantity > 0),
-        }));
-    },
+		return {
+			itemRegistry,
+			items,
+			totalItems,
+			totalPrice,
+		};
+	}
+}
 
-    setIsOpen: (isOpen) => set({ isOpen }),
+const initialSnapshot = CartStateProjector.toSnapshot({});
 
-    totalItems: () => {
-        return get().items.reduce((total, item) => total + item.quantity, 0);
-    },
+export const useCartStore = create<CartState>((set) => ({
+	...initialSnapshot,
 
-    totalPrice: () => {
-        return get().items.reduce((total, item) => total + item.product.price * item.quantity, 0);
-    },
+	addItem: (product) => {
+		set((state) => {
+			const itemKey = CartStateProjector.createItemKey(product);
+			const existingItem = state.itemRegistry[itemKey];
+			const nextItem: CartItem = existingItem
+				? { ...existingItem, quantity: existingItem.quantity + 1 }
+				: { itemKey, product, quantity: 1 };
+
+			const nextRegistry: CartRegistry = {
+				...state.itemRegistry,
+				[itemKey]: nextItem,
+			};
+
+			return CartStateProjector.toSnapshot(nextRegistry);
+		});
+	},
+
+	removeItem: (itemKey) => {
+		set((state) => {
+			if (!state.itemRegistry[itemKey]) {
+				return state;
+			}
+
+			const nextRegistry = { ...state.itemRegistry };
+			delete nextRegistry[itemKey];
+			return CartStateProjector.toSnapshot(nextRegistry);
+		});
+	},
+
+	updateQuantity: (itemKey, delta) => {
+		set((state) => {
+			const currentItem = state.itemRegistry[itemKey];
+			if (!currentItem) {
+				return state;
+			}
+
+			const nextQuantity = currentItem.quantity + delta;
+			const nextRegistry = { ...state.itemRegistry };
+
+			if (nextQuantity <= 0) {
+				delete nextRegistry[itemKey];
+			} else {
+				nextRegistry[itemKey] = { ...currentItem, quantity: nextQuantity };
+			}
+
+			return CartStateProjector.toSnapshot(nextRegistry);
+		});
+	},
 }));
