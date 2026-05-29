@@ -1,113 +1,113 @@
 # supermarket-planner
 
-Monorepo para comparar precios de supermercados en Las Palmas de Gran Canaria. Raspa Mercadona, Carrefour, Aldi, Lidl y HiperDino en tiempo real.
+Monorepo for comparing supermarket prices in Las Palmas de Gran Canaria. Scrapes Mercadona, Carrefour, Aldi, Lidl and HiperDino in real time.
 
-## Paquetes
+## Packages
 
-- `backend/` — API REST con Express, scraping con Playwright, Prisma + PostgreSQL, categorización con Gemini AI
+- `backend/` — REST API with Express, scraping with Playwright, Prisma + PostgreSQL, categorization with Gemini AI
 - `frontend/` — Next.js 16 App Router, React 19 + React Compiler, Zustand, Tailwind CSS 4
 
-## Arquitectura
+## Architecture
 
-### Backend — Arquitectura Hexagonal estricta
+### Backend — Strict Hexagonal Architecture
 
 ```
 src/
-├── domain/           # Entidades, value objects, servicios de dominio — CERO dependencias de framework
-├── application/      # Casos de uso + puertos (incoming/outgoing interfaces) — sin frameworks
-├── infrastructure/   # Todo lo técnico: adaptadores, composición, config, logging
+├── domain/           # Entities, value objects, domain services — ZERO framework dependencies
+├── application/      # Use cases + ports (incoming/outgoing interfaces) — framework-free
+├── infrastructure/   # Everything technical: adapters, composition, config, logging
 │   ├── adapters/
-│   │   ├── driven/       # Adaptadores secundarios: Prisma, scrapers Playwright, Gemini AI, colas, categorización
-│   │   └── driving/      # Adaptadores primarios: controladores HTTP (Express), cron (node-cron)
-│   ├── composition/      # Raíz de composición (bootstrap.ts)
-│   ├── config/           # Carga de configuración/entorno (dotenv)
-│   └── logging/          # Logger concreto (winston)
-└── index.ts          # Entrypoint fino: delega en la raíz de composición
+│   │   ├── driven/       # Secondary adapters: Prisma, Playwright scrapers, Gemini AI, queues, categorization
+│   │   └── driving/      # Primary adapters: HTTP controllers (Express), cron (node-cron)
+│   ├── composition/      # Composition root (bootstrap.ts)
+│   ├── config/           # Configuration/environment loading (dotenv)
+│   └── logging/          # Concrete logger (winston)
+└── index.ts          # Thin entrypoint: delegates to the composition root
 ```
 
-**Raíz de composición**: `src/infrastructure/composition/bootstrap.ts`
+**Composition root**: `src/infrastructure/composition/bootstrap.ts`
 
-Reglas absolutas:
-- Nunca importar Prisma/Express/Playwright/node-cron/winston/dotenv en `domain/` o `application/`
-- `domain/` no importa de `application/` ni de `infrastructure/`; `application/` no importa de `infrastructure/`
-- Las dependencias externas (DB, logger, colas, scrapers) se consumen vía puertos en `application/ports/outgoing/` e se inyectan desde la raíz de composición (p.ej. `LoggerPort`)
-- Los scrapers extienden `PlaywrightScraperAdapterBase`, nunca instancian browser directamente
-- Prisma solo en `infrastructure/adapters/driven/persistence/`
-- Gemini AI solo en `infrastructure/adapters/driven/ai/`
-- Controladores HTTP y cron son adaptadores driving: viven en `infrastructure/adapters/driving/`
+Absolute rules:
+- Never import Prisma/Express/Playwright/node-cron/winston/dotenv in `domain/` or `application/`
+- `domain/` does not import from `application/` or `infrastructure/`; `application/` does not import from `infrastructure/`
+- External dependencies (DB, logger, queues, scrapers) are consumed via ports in `application/ports/outgoing/` and injected from the composition root (e.g. `LoggerPort`)
+- Scrapers extend `PlaywrightScraperAdapterBase`, never instantiate the browser directly
+- Prisma only in `infrastructure/adapters/driven/persistence/`
+- Gemini AI only in `infrastructure/adapters/driven/ai/`
+- HTTP controllers and cron are driving adapters: they live in `infrastructure/adapters/driving/`
 
-### Frontend — Módulos por feature
+### Frontend — Feature-based modules
 
 ```
 src/
-├── app/              # App Router: páginas, layouts, rutas API
-├── components/       # Componentes UI compartidos
-├── features/         # Módulos de feature (product-search, cart, etc.)
+├── app/              # App Router: pages, layouts, API routes
+├── components/       # Shared UI components
+├── features/         # Feature modules (product-search, cart, etc.)
 ├── hooks/            # Custom React hooks
-├── lib/              # Infraestructura: HTTP clients, contenedor DI
-├── store/            # Estado cliente con Zustand
-└── types/            # Tipos TypeScript compartidos
+├── lib/              # Infrastructure: HTTP clients, DI container
+├── store/            # Client state with Zustand
+└── types/            # Shared TypeScript types
 ```
 
-**Contenedor DI**: `src/lib/di/ContainerDI.ts`
+**DI container**: `src/lib/di/ContainerDI.ts`
 
-React Compiler está activo — evitar `useMemo`/`useCallback` manuales salvo justificación explícita.
+React Compiler is enabled — avoid manual `useMemo`/`useCallback` unless explicitly justified.
 
-## Comandos de Build
+## Build Commands
 
-### Backend (ejecutar desde `backend/`)
+### Backend (run from `backend/`)
 
 ```bash
-npm run dev                     # tsx watch (puerto 3000)
-npm run build                   # Compila TypeScript → dist/
-npm run test                    # Todos los tests Vitest
-npm run test:unit               # Tests unitarios
-npm run test:integration        # Tests de integración (requiere DB)
-npm run test:e2e                # Tests E2E de scraping con Playwright
-npx prisma migrate dev          # Aplicar nueva migración
-npx prisma generate             # Regenerar cliente tras cambio de schema
+npm run dev                     # tsx watch (port 3000)
+npm run build                   # Compile TypeScript → dist/
+npm run test                    # All Vitest tests
+npm run test:unit               # Unit tests
+npm run test:integration        # Integration tests (requires DB)
+npm run test:e2e                # Scraping E2E tests with Playwright
+npx prisma migrate dev          # Apply a new migration
+npx prisma generate             # Regenerate client after a schema change
 ```
 
-### Frontend (ejecutar desde `frontend/`)
+### Frontend (run from `frontend/`)
 
 ```bash
-npm run dev     # Next.js dev (puerto 3001 vía Docker, 3000 directo)
-npm run build   # Build de producción
-npm run test    # Tests Vitest + React Testing Library
+npm run dev     # Next.js dev (port 3001 via Docker, 3000 direct)
+npm run build   # Production build
+npm run test    # Vitest + React Testing Library tests
 npm run lint    # ESLint
 ```
 
-### Docker (ejecutar desde raíz)
+### Docker (run from root)
 
 ```bash
-docker compose up -d              # Todos los servicios
-docker compose up database -d     # Solo PostgreSQL (para dev local de backend)
+docker compose up -d              # All services
+docker compose up database -d     # PostgreSQL only (for local backend dev)
 ```
 
 ## TypeScript
 
-- Ambos paquetes: `strict: true`
-- Backend añade: `noImplicitAny`, `noImplicitReturns`, `noUnusedLocals`, `noUnusedParameters`
-- Nunca usar `any`; nunca omitir tipos de retorno en funciones públicas
+- Both packages: `strict: true`
+- Backend adds: `noImplicitAny`, `noImplicitReturns`, `noUnusedLocals`, `noUnusedParameters`
+- Never use `any`; never omit return types on public functions
 
-## Convenciones de Testing
+## Testing Conventions
 
-- Tests unitarios collocados: `src/.../Foo.unit.test.ts` / `Foo.unit.test.tsx`
-- Tests de integración: `src/.../Foo.integration.test.ts`
-- Tests E2E de scraping: `backend/tests/e2e/`
-- Nomenclatura: `describe("ClassName") { it("should [comportamiento]") }`
-- Mockear en el límite del puerto/repositorio; nunca mockear la lógica de dominio
+- Co-located unit tests: `src/.../Foo.unit.test.ts` / `Foo.unit.test.tsx`
+- Integration tests: `src/.../Foo.integration.test.ts`
+- Scraping E2E tests: `backend/tests/e2e/`
+- Naming: `describe("ClassName") { it("should [behavior]") }`
+- Mock at the port/repository boundary; never mock domain logic
 
 ## Skills
 
-- `.claude/skills/hexagonal-architecture/` — Reglas de aislamiento entre capas
-- `.claude/skills/class-first-architecture/` — Diseño orientado a interfaces
-- `.claude/skills/code-semantic/` — Código expresivo y limpio
-- `.claude/skills/testing/` — Patrones de testing para este proyecto
+- `.claude/skills/hexagonal-architecture/` — Layer isolation rules
+- `.claude/skills/class-first-architecture/` — Interface-driven design
+- `.claude/skills/code-semantic/` — Expressive, clean code
+- `.claude/skills/testing/` — Testing patterns for this project
 
-## Entorno
+## Environment
 
-- `.env` (raíz) — Variables de Docker Compose (Postgres, puertos)
-- `backend/.env` — Variables de dev local (DATABASE_URL, GEMINI_API_KEY, etc.)
-- Nunca commitear `.env` con secretos reales; usar `.env.example` como plantilla
-- `GEMINI_API_KEY` es necesario para el categorizador AI; dejar vacío lo deshabilita
+- `.env` (root) — Docker Compose variables (Postgres, ports)
+- `backend/.env` — Local dev variables (DATABASE_URL, GEMINI_API_KEY, etc.)
+- Never commit `.env` with real secrets; use `.env.example` as a template
+- `GEMINI_API_KEY` is required for the AI categorizer; leaving it empty disables it

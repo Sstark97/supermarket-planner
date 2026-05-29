@@ -1,25 +1,25 @@
 # Supermarket Planner (Antigravity)
 
-Proyecto para comparar precios de supermercados (Mercadona, Carrefour, Lidl, Aldi, HiperDino) en Las Palmas / Canarias.
+Project for comparing supermarket prices (Mercadona, Carrefour, Lidl, Aldi, HiperDino) in Las Palmas / Canary Islands.
 
-## Resumen
-Backend Node.js + TypeScript que realiza scraping con Playwright y llamadas directas a APIs. Los resultados se guardan en PostgreSQL via Prisma. El frontend (Next.js) lee datos desde la base y muestra comparativas.
+## Overview
+Node.js + TypeScript backend that scrapes with Playwright and direct API calls. Results are stored in PostgreSQL via Prisma. The frontend (Next.js) reads data from the database and shows comparisons.
 
-> Nota importante: El endpoint público `GET /search` solo consulta la base de datos. Para obtener datos en vivo hay que ejecutar el cron o disparar los endpoints de scraping manual.
+> Important note: The public `GET /search` endpoint only queries the database. To get live data you must run the cron or trigger the manual scraping endpoints.
 
-## Tecnologías
+## Technologies
 - Node.js, TypeScript
-- Playwright (scrapers browser-based)
+- Playwright (browser-based scrapers)
 - Express, Zod
 - Prisma + PostgreSQL
 - Next.js (frontend)
-- Winston para logs (por consola)
+- Winston for logs (to console)
 
 ## Quickstart (local)
-1. Levantar PostgreSQL:
+1. Start PostgreSQL:
 
 ```bash
-# Desde la raíz
+# From the root
 docker-compose up -d
 ```
 
@@ -27,13 +27,13 @@ docker-compose up -d
 
 ```bash
 cd backend
-# Instalar dependencias (npm/pnpm/yarn según prefieras)
+# Install dependencies (npm/pnpm/yarn as you prefer)
 npm install
-# Crear .env a partir de .env.example y ajustar DATABASE_URL, POSTAL_CODE, PLAYWRIGHT_HEADLESS, etc.
+# Create .env from .env.example and adjust DATABASE_URL, POSTAL_CODE, PLAYWRIGHT_HEADLESS, etc.
 cp .env.example .env
-# Push schema a la DB
+# Push schema to the DB
 npx prisma db push
-# Iniciar en modo desarrollo
+# Start in development mode
 npm run dev
 ```
 
@@ -42,34 +42,34 @@ npm run dev
 ```bash
 cd frontend
 npm install
-# Ajustar NEXT_PUBLIC_API_URL si el backend no está en http://localhost:3000
+# Adjust NEXT_PUBLIC_API_URL if the backend is not at http://localhost:3000
 npm run dev
 ```
 
 ## Scraping
 - Manual: POST /admin/scrape/:query
-- Full loop: POST /admin/scrape-all (lanza la ejecución completa en background)
-- Cron: programado en `backend/src/infrastructure/adapters/driving/cron/scraperCron.ts` para ejecutarse a las 04:00 diariamente
+- Full loop: POST /admin/scrape-all (runs the full execution in the background)
+- Cron: scheduled in `backend/src/infrastructure/adapters/driving/cron/scraperCron.ts` to run daily at 04:00
 
-Para que el frontend muestre resultados: ejecutar al menos un `POST /admin/scrape/:query` o el `scrape-all` y luego consultar `GET /search?q=<term>`.
+For the frontend to show results: run at least one `POST /admin/scrape/:query` or the `scrape-all`, then query `GET /search?q=<term>`.
 
-## Debugging y recomendaciones inmediatas
-- Revisar `SCRAPING_DIAGNOSTIC_REPORT.md` (generado) para encontrar puntos frágiles.
-- El logging va a consola; si necesitas persistencia, añadir winston File transport.
-- Si scrapers devuelven `[]`: comprobar que el cron o endpoint manual se ejecutaron y que la DB contiene registros.
-- Para sitios protegidos (Carrefour, Mercadona) considerar:
-  - Rotación de proxies / proxies residenciales
-  - Captura de screenshots y HTML dump al fallo
-  - Uso de técnicas stealth avanzadas y retries
+## Debugging and immediate recommendations
+- Check `SCRAPING_DIAGNOSTIC_REPORT.md` (generated) to find fragile spots.
+- Logging goes to the console; if you need persistence, add a winston File transport.
+- If scrapers return `[]`: verify that the cron or manual endpoint ran and that the DB contains records.
+- For protected sites (Carrefour, Mercadona) consider:
+  - Proxy rotation / residential proxies
+  - Capturing screenshots and HTML dumps on failure
+  - Advanced stealth techniques and retries
 
-## Organización del repo
-- `backend/src/infrastructure/adapters/driven/scraping/supermarkets/*` — scrapers por supermercado
+## Repo organization
+- `backend/src/infrastructure/adapters/driven/scraping/supermarkets/*` — scrapers per supermarket
 - `backend/src/infrastructure/adapters/driven/scraping/strategies` — BrowserManager, StealthHelper
-- `backend/src/infrastructure/adapters/driving/cron` — lógica del cron y queries predefinidas
-- `frontend/src` — UI Next.js
+- `backend/src/infrastructure/adapters/driving/cron` — cron logic and predefined queries
+- `frontend/src` — Next.js UI
 
-## Contacto
-Para pasar este repo a un experto en scraping: compartir este README + `SCRAPING_DIAGNOSTIC_REPORT.md` y acceso al entorno (DATABASE_URL, variables .env). 
+## Contact
+To hand this repo to a scraping expert: share this README + `SCRAPING_DIAGNOSTIC_REPORT.md` and access to the environment (DATABASE_URL, .env variables).
 
 ---
-README generado y commiteado en el repo local.
+README generated and committed in the local repo.
