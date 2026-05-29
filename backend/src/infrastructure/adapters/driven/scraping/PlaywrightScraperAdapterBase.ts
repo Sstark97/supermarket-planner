@@ -2,8 +2,8 @@ import type {
 	CircuitBreakerStatus,
 	SupermarketSearchPort,
 } from "../../../../application/ports/outgoing/SupermarketSearchPort";
-import type { IProduct } from "../../../../interfaces/IProduct";
-import { logger } from "../../../../utils/logger";
+import type { IProduct } from "../../../../domain/entities/IProduct";
+import { logger } from "../../../logging/logger";
 
 /**
  * Abstract base class for all supermarket scrapers.

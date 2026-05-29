@@ -3,7 +3,7 @@ import type {
 	CircuitBreakerStatus,
 	SupermarketSearchPort,
 } from "../../ports/outgoing/SupermarketSearchPort";
-import { ProductCategory, type IProduct } from "../../../interfaces/IProduct";
+import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
 import { TriggerManualScrapeUseCase } from "./TriggerManualScrapeUseCase";
 
 const makeProduct = (

@@ -1,7 +1,7 @@
 import type { TriggerManualScrapeUseCasePort } from "../../ports/incoming/TriggerManualScrapeUseCasePort";
 import type { SupermarketSearchPort } from "../../ports/outgoing/SupermarketSearchPort";
-import type { IProduct } from "../../../interfaces/IProduct";
-import { logger } from "../../../utils/logger";
+import type { IProduct } from "../../../domain/entities/IProduct";
+import { logger } from "../../../infrastructure/logging/logger";
 import type { SearchResult, TriggerManualScrapeInput } from "./contracts";
 
 export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePort {

@@ -1,4 +1,4 @@
-import type { IProduct } from "../../../interfaces/IProduct";
+import type { IProduct } from "../../../domain/entities/IProduct";
 
 export interface SearchProductsInput {
 	query?: string;

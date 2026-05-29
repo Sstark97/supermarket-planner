@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	ProductCategory,
 	type IProduct,
-} from "../../../../../interfaces/IProduct";
+} from "../../../../../domain/entities/IProduct";
 import type { ProductMapper } from "../../../../../domain/services/ProductMappingPolicy";
 
 const mocks = vi.hoisted(() => ({
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 	blockUnnecessaryResources: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("../../../../../utils/ProductCategorizer", () => ({
+vi.mock("../../categorization/ProductCategorizer", () => ({
 	categorize: vi.fn().mockResolvedValue(ProductCategory.OTHER),
 }));
 

@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { BackgroundRefreshQueuePort } from "../../../../application/ports/outgoing/BackgroundRefreshQueuePort";
-import { logger } from "../../../../utils/logger";
+import { logger } from "../../../logging/logger";
 
 type RefreshHandler = (query: string) => Promise<void>;
 

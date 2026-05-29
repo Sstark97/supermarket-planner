@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ProductCategory } from "../../../../interfaces/IProduct";
+import { ProductCategory } from "../../../../domain/entities/IProduct";
 import type { AiCategorizer } from "../../../../application/ports/outgoing/AiCategorizer";
 
 interface GeminiLikeModel {

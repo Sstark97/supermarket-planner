@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type { IProduct } from "../../interfaces/IProduct";
+import type { IProduct } from "../entities/IProduct";
 import {
 	detectTaxType,
 	normalizePricePerUnit,
-} from "../../utils/PriceNormalizer";
+} from "./PriceNormalizer";
 
 export interface ProductMappingInput {
 	supermarket: string;

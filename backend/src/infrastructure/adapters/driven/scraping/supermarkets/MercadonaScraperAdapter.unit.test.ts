@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	ProductCategory,
 	type IProduct,
-} from "../../../../../interfaces/IProduct";
+} from "../../../../../domain/entities/IProduct";
 import type { ProductMapper } from "../../../../../domain/services/ProductMappingPolicy";
 
 const addInitScript = vi.fn().mockResolvedValue(undefined);
@@ -17,7 +17,7 @@ const dollar = vi.fn().mockResolvedValue(null);
 const fill = vi.fn().mockResolvedValue(undefined);
 const keyboardPress = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../../../../../utils/ProductCategorizer", () => ({
+vi.mock("../../categorization/ProductCategorizer", () => ({
 	categorize: vi.fn().mockResolvedValue(ProductCategory.OTHER),
 }));
 

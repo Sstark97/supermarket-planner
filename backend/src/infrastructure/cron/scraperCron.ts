@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import { logger } from "../utils/logger";
-import type { TriggerManualScrapeUseCasePort } from "../application/ports/incoming/TriggerManualScrapeUseCasePort";
-import type { ProductCatalogRepository } from "../application/ports/outgoing/ProductCatalogRepository";
+import { logger } from "../logging/logger";
+import type { TriggerManualScrapeUseCasePort } from "../../application/ports/incoming/TriggerManualScrapeUseCasePort";
+import type { ProductCatalogRepository } from "../../application/ports/outgoing/ProductCatalogRepository";
 
 // Essential weekly shopping queries to track broadly
 const CRON_QUERIES = [
