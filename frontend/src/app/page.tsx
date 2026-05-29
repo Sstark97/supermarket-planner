@@ -24,7 +24,9 @@ export default async function Home({
 				<div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<CategoryFilter />
 					<div className="flex justify-end pb-2 md:pb-0">
-						<FilterMenu />
+						<FilterMenu
+							key={`filters-${query}-${category}-${supermarket}-${sortBy}`}
+						/>
 					</div>
 				</div>
 			</div>
