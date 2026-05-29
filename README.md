@@ -49,7 +49,7 @@ npm run dev
 ## Scraping
 - Manual: POST /admin/scrape/:query
 - Full loop: POST /admin/scrape-all (lanza la ejecución completa en background)
-- Cron: programado en `backend/src/cron/scraperCron.ts` para ejecutarse a las 04:00 diariamente
+- Cron: programado en `backend/src/infrastructure/adapters/driving/cron/scraperCron.ts` para ejecutarse a las 04:00 diariamente
 
 Para que el frontend muestre resultados: ejecutar al menos un `POST /admin/scrape/:query` o el `scrape-all` y luego consultar `GET /search?q=<term>`.
 
@@ -63,9 +63,9 @@ Para que el frontend muestre resultados: ejecutar al menos un `POST /admin/scrap
   - Uso de técnicas stealth avanzadas y retries
 
 ## Organización del repo
-- `backend/src/scrapers/implementations/*` — scrapers por supermercado
-- `backend/src/scrapers/strategies` — BrowserManager, StealthHelper
-- `backend/src/cron` — lógica del cron y queries predefinidas
+- `backend/src/infrastructure/adapters/driven/scraping/supermarkets/*` — scrapers por supermercado
+- `backend/src/infrastructure/adapters/driven/scraping/strategies` — BrowserManager, StealthHelper
+- `backend/src/infrastructure/adapters/driving/cron` — lógica del cron y queries predefinidas
 - `frontend/src` — UI Next.js
 
 ## Contacto
