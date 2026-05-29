@@ -48,7 +48,7 @@ describe("ProductCategorizationUseCase", () => {
 		const aiCategorizer: AiCategorizer = {
 			categorize: vi.fn().mockRejectedValue(new Error("boom")),
 		};
-		const logger = { error: vi.fn() };
+		const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 		const useCase = new ProductCategorizationUseCase({
 			keywordCategorizer,
 			aiCategorizer,
@@ -70,7 +70,7 @@ describe("ProductCategorizationUseCase", () => {
 				() => new Promise<ProductCategory | undefined>(() => undefined),
 			),
 		};
-		const logger = { error: vi.fn() };
+		const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 		const useCase = new ProductCategorizationUseCase({
 			keywordCategorizer,
 			aiCategorizer,

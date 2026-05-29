@@ -3,8 +3,16 @@ import type {
 	CircuitBreakerStatus,
 	SupermarketSearchPort,
 } from "../../ports/outgoing/SupermarketSearchPort";
+import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
 import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
 import { TriggerManualScrapeUseCase } from "./TriggerManualScrapeUseCase";
+
+const silentLogger: LoggerPort = {
+	info: vi.fn(),
+	warn: vi.fn(),
+	error: vi.fn(),
+	debug: vi.fn(),
+};
 
 const makeProduct = (
 	name: string,
@@ -48,7 +56,7 @@ describe("TriggerManualScrapeUseCase.execute", () => {
 			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
 		};
 
-		const useCase = new TriggerManualScrapeUseCase([okScraper, failingScraper]);
+		const useCase = new TriggerManualScrapeUseCase([okScraper, failingScraper], silentLogger);
 		const result = await useCase.execute({ query: "milk" });
 
 		expect(result.results).toHaveLength(1);
@@ -70,7 +78,7 @@ describe("TriggerManualScrapeUseCase.execute", () => {
 			getCircuitBreakerStatus: vi.fn(() => makeCircuitStatus(1)),
 		};
 
-		const useCase = new TriggerManualScrapeUseCase([failingScraper]);
+		const useCase = new TriggerManualScrapeUseCase([failingScraper], silentLogger);
 		const result = await useCase.execute({ query: "rice" });
 
 		expect(result.results).toEqual([]);

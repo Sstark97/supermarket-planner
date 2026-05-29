@@ -3,8 +3,8 @@ import express, { type Express } from "express";
 import { RefreshProductsCatalogUseCase } from "../../application/use-cases/search/RefreshProductsCatalogUseCase";
 import { SearchProductsUseCase } from "../../application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "../../application/use-cases/search/TriggerManualScrapeUseCase";
-import { SearchController } from "../../controllers/SearchController";
-import { ScraperCron } from "../cron/scraperCron";
+import { SearchController } from "../adapters/driving/http/SearchController";
+import { ScraperCron } from "../adapters/driving/cron/scraperCron";
 import { PrismaProductRepository } from "../adapters/driven/persistence/prisma/PrismaProductRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "../adapters/driven/queue/BackgroundRefreshQueue";
 import { AldiScraperAdapter } from "../adapters/driven/scraping/supermarkets/AldiScraperAdapter";
@@ -13,7 +13,7 @@ import { HiperDinoScraperAdapter } from "../adapters/driven/scraping/supermarket
 import { LidlScraperAdapter } from "../adapters/driven/scraping/supermarkets/LidlScraperAdapter";
 import { MercadonaScraperAdapter } from "../adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
 import { logger } from "../logging/logger";
-import { errorHandler } from "../http/errorHandler";
+import { errorHandler } from "../adapters/driving/http/errorHandler";
 import type { PlaywrightScraperAdapterBase } from "../adapters/driven/scraping/PlaywrightScraperAdapterBase";
 
 export interface BootstrappedBackendApplication {
@@ -36,11 +36,15 @@ export class BackendCompositionBootstrap {
 			new AldiScraperAdapter(),
 		];
 
-		const triggerManualScrapeUseCase = new TriggerManualScrapeUseCase(scrapers);
+		const triggerManualScrapeUseCase = new TriggerManualScrapeUseCase(
+			scrapers,
+			logger,
+		);
 		const productCatalogRepository = new PrismaProductRepository();
 		const refreshProductsCatalogUseCase = new RefreshProductsCatalogUseCase(
 			triggerManualScrapeUseCase,
 			productCatalogRepository,
+			logger,
 		);
 		const backgroundRefreshQueue = new InMemoryBackgroundRefreshQueueAdapter(
 			async (query) => {
@@ -50,6 +54,7 @@ export class BackendCompositionBootstrap {
 		const searchProductsUseCase = new SearchProductsUseCase(
 			productCatalogRepository,
 			backgroundRefreshQueue,
+			logger,
 		);
 		const searchController = new SearchController(searchProductsUseCase);
 		const scraperCron = new ScraperCron(

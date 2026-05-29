@@ -1,8 +1,8 @@
 import type { SearchProductsUseCasePort } from "../../ports/incoming/SearchProductsUseCasePort";
 import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
 import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
+import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
 import type { IProduct } from "../../../domain/entities/IProduct";
-import { logger } from "../../../infrastructure/logging/logger";
 import type { SearchProductsInput, SearchResult } from "./contracts";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -11,10 +11,11 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 	constructor(
 		private readonly productCatalogRepository: ProductCatalogRepository,
 		private readonly backgroundRefreshQueue: BackgroundRefreshQueuePort,
+		private readonly logger: LoggerPort,
 	) {}
 
 	async execute(input: SearchProductsInput): Promise<SearchResult> {
-		logger.info(
+		this.logger.info(
 			`[SearchProductsUseCase] execute - query: "${input.query}", category: "${input.category}", supermarket: "${input.supermarket}", sortBy: "${input.sortBy}"`,
 		);
 

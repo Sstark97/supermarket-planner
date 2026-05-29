@@ -1,18 +1,21 @@
 import type { TriggerManualScrapeUseCasePort } from "../../ports/incoming/TriggerManualScrapeUseCasePort";
 import type { SupermarketSearchPort } from "../../ports/outgoing/SupermarketSearchPort";
+import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
 import type { IProduct } from "../../../domain/entities/IProduct";
-import { logger } from "../../../infrastructure/logging/logger";
 import type { SearchResult, TriggerManualScrapeInput } from "./contracts";
 
 export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePort {
-	constructor(private readonly scrapers: SupermarketSearchPort[]) {}
+	constructor(
+		private readonly scrapers: SupermarketSearchPort[],
+		private readonly logger: LoggerPort,
+	) {}
 
 	async execute(input: TriggerManualScrapeInput): Promise<SearchResult> {
 		const query = input.query;
 		const scrapedAt = new Date().toISOString();
 		const warnings: string[] = [];
 
-		logger.info(
+		this.logger.info(
 			`[TriggerManualScrapeUseCase] Starting parallel scrapers for: "${query}"`,
 		);
 		const searchStartedAt = Date.now();
@@ -21,12 +24,12 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 			const scraperStartedAt = Date.now();
 			try {
 				const results = await scraper.search(query);
-				logger.info(
+				this.logger.info(
 					`[TriggerManualScrapeUseCase] ${scraper.name} completed: ${results.length} results in ${Date.now() - scraperStartedAt}ms`,
 				);
 				return results;
 			} catch (error) {
-				logger.error(
+				this.logger.error(
 					`[TriggerManualScrapeUseCase] ${scraper.name} failed after ${Date.now() - scraperStartedAt}ms: ${error}`,
 				);
 				throw error;
@@ -34,7 +37,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 		});
 
 		const settledResults = await Promise.allSettled(scraperTasks);
-		logger.info(
+		this.logger.info(
 			`[TriggerManualScrapeUseCase] All scrapers finished in ${Date.now() - searchStartedAt}ms.`,
 		);
 
@@ -47,7 +50,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 			}
 
 			const rejectionReason = this.formatRejectionReason(outcome.reason);
-			logger.error(
+			this.logger.error(
 				`[TriggerManualScrapeUseCase] ${scraperName} rejected: ${rejectionReason}`,
 			);
 			warnings.push(`${scraperName}: ${rejectionReason}`);

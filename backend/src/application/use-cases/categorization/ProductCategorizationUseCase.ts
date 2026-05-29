@@ -1,21 +1,20 @@
 import { ProductCategory } from "../../../domain/entities/IProduct";
 import type { KeywordCategorizer } from "../../ports/outgoing/KeywordCategorizer";
 import type { AiCategorizer } from "../../ports/outgoing/AiCategorizer";
+import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
 
 export interface ProductCategorizationUseCaseDeps {
 	keywordCategorizer: KeywordCategorizer;
 	aiCategorizer?: AiCategorizer;
 	aiTimeoutMs?: number;
-	logger?: {
-		error(message: string): void;
-	};
+	logger?: LoggerPort;
 }
 
 export class ProductCategorizationUseCase {
 	private readonly keywordCategorizer: KeywordCategorizer;
 	private readonly aiCategorizer?: AiCategorizer;
 	private readonly aiTimeoutMs: number;
-	private readonly logger?: { error(message: string): void };
+	private readonly logger?: LoggerPort;
 
 	constructor(deps: ProductCategorizationUseCaseDeps) {
 		this.keywordCategorizer = deps.keywordCategorizer;

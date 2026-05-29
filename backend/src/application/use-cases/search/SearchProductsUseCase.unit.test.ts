@@ -1,8 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
 import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
+import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
 import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
 import { SearchProductsUseCase } from "./SearchProductsUseCase";
+
+const silentLogger: LoggerPort = {
+	info: vi.fn(),
+	warn: vi.fn(),
+	error: vi.fn(),
+	debug: vi.fn(),
+};
 
 let productSequence = 0;
 
@@ -41,6 +49,7 @@ function buildUseCase(
 		useCase: new SearchProductsUseCase(
 			productCatalogRepository,
 			backgroundRefreshQueue,
+			silentLogger,
 		),
 		productCatalogRepository,
 		backgroundRefreshQueue,
