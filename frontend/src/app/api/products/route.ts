@@ -1,41 +1,44 @@
+import { ProductSearchApiResponseMapper } from "@/features/product-search/api/ProductSearchApiResponseMapper";
+import { ProductSearchApiUrlPolicy } from "@/features/product-search/api/ProductSearchApiUrlPolicy";
+import { ProductSearchCachePolicy } from "@/features/product-search/api/ProductSearchCachePolicy";
+import { ProductSearchRequestBuilder } from "@/features/product-search/api/ProductSearchRequestBuilder";
 import { ProductSearchFiltersMapper } from "@/features/product-search/filters";
-import { NextRequest, NextResponse } from "next/server";
-
-function buildBackendSearchUrl(searchParams: URLSearchParams): string {
-	const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-	return `${backendUrl}/search?${searchParams.toString()}`;
-}
+import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
-	const searchFiltersMapper = new ProductSearchFiltersMapper();
-	const filters = searchFiltersMapper.parse(request.nextUrl.searchParams);
-	const params = searchFiltersMapper.toSearchParams(filters);
+	const mapper = new ProductSearchFiltersMapper();
+	const responseMapper = new ProductSearchApiResponseMapper();
+	const cachePolicy = new ProductSearchCachePolicy();
+	const apiUrlPolicy = new ProductSearchApiUrlPolicy();
+	const requestBuilder = new ProductSearchRequestBuilder(
+		apiUrlPolicy.resolveApiUrl(),
+	);
+	const filters = mapper.parse(request.nextUrl.searchParams);
+	const params = mapper.toSearchParams(filters);
+	const requestUrl = requestBuilder.buildUrl(params);
+	const allowedOrigins = new Set([
+		"http://localhost:3000",
+		"http://backend:3000",
+	]);
+	if (!allowedOrigins.has(requestUrl.origin)) {
+		throw new Error(`Blocked outbound origin: ${requestUrl.origin}`);
+	}
 
 	try {
-		const res = await fetch(buildBackendSearchUrl(params), {
-			cache: "no-store",
-		});
+		const res = await fetch(requestUrl, cachePolicy.for(filters));
 
 		if (!res.ok) {
+			const body = await res.text();
 			if (res.status === 400 && !filters.query) {
-				return NextResponse.json({ results: [] });
+				return responseMapper.toSuccess({ results: [] });
 			}
 
-			return NextResponse.json({
-				results: [],
-				error: `Backend API error: ${res.status}`,
-			});
+			return responseMapper.toBackendFailure(res.status, body);
 		}
 
-		const json = await res.json();
-		return NextResponse.json({
-			results: Array.isArray(json?.results) ? json.results : [],
-		});
+		const payload = await res.json();
+		return responseMapper.toSuccess(payload);
 	} catch (error) {
-		console.error("[api/products] fetch failed", error);
-		return NextResponse.json({
-			results: [],
-			error: "Backend unavailable",
-		});
+		return responseMapper.toUnavailable(error);
 	}
 }
