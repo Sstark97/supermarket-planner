@@ -14,18 +14,27 @@ Monorepo para comparar precios de supermercados en Las Palmas de Gran Canaria. R
 ```
 src/
 ├── domain/           # Entidades, value objects, servicios de dominio — CERO dependencias de framework
-├── application/      # Casos de uso + puertos (incoming/outgoing interfaces)
-├── infrastructure/   # Adaptadores: Prisma, scrapers Playwright, Gemini AI, colas
-└── controllers/      # Adaptadores HTTP driving (Express)
+├── application/      # Casos de uso + puertos (incoming/outgoing interfaces) — sin frameworks
+├── infrastructure/   # Todo lo técnico: adaptadores, composición, config, logging
+│   ├── adapters/
+│   │   ├── driven/       # Adaptadores secundarios: Prisma, scrapers Playwright, Gemini AI, colas, categorización
+│   │   └── driving/      # Adaptadores primarios: controladores HTTP (Express), cron (node-cron)
+│   ├── composition/      # Raíz de composición (bootstrap.ts)
+│   ├── config/           # Carga de configuración/entorno (dotenv)
+│   └── logging/          # Logger concreto (winston)
+└── index.ts          # Entrypoint fino: delega en la raíz de composición
 ```
 
 **Raíz de composición**: `src/infrastructure/composition/bootstrap.ts`
 
 Reglas absolutas:
-- Nunca importar Prisma/Express/Playwright/node-cron en `domain/` o `application/`
+- Nunca importar Prisma/Express/Playwright/node-cron/winston/dotenv en `domain/` o `application/`
+- `domain/` no importa de `application/` ni de `infrastructure/`; `application/` no importa de `infrastructure/`
+- Las dependencias externas (DB, logger, colas, scrapers) se consumen vía puertos en `application/ports/outgoing/` e se inyectan desde la raíz de composición (p.ej. `LoggerPort`)
 - Los scrapers extienden `PlaywrightScraperAdapterBase`, nunca instancian browser directamente
 - Prisma solo en `infrastructure/adapters/driven/persistence/`
 - Gemini AI solo en `infrastructure/adapters/driven/ai/`
+- Controladores HTTP y cron son adaptadores driving: viven en `infrastructure/adapters/driving/`
 
 ### Frontend — Módulos por feature
 
