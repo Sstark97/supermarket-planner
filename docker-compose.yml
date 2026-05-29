@@ -54,12 +54,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3000}
+        NEXT_PUBLIC_API_URL: http://backend:3000
     container_name: supermarket-planner-frontend
     restart: unless-stopped
     environment:
       PORT: 3000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3000}
+      NEXT_PUBLIC_API_URL: http://backend:3000
+      INTERNAL_APP_URL: http://frontend:3000
     depends_on:
       - backend
     ports:

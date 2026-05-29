@@ -10,6 +10,11 @@ export class ContainerDI {
 	constructor(private readonly headerReader: HeaderReader) {}
 
 	resolveProductGateway(): ProductGateway {
+		const internalAppUrl = process.env.INTERNAL_APP_URL;
+		if (internalAppUrl) {
+			return new ProductHttpClient(internalAppUrl);
+		}
+
 		const host =
 			this.headerReader.get("x-forwarded-host") ??
 			this.headerReader.get("host");
