@@ -53,7 +53,7 @@ export async function ProductGrid({
 	}
 
 	return (
-		<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 max-w-7xl mx-auto">
+		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 max-w-7xl mx-auto">
 			{products.map((product) => (
 				<ProductCard
 					key={`${product.supermarket}-${product.id}`}
@@ -66,7 +66,7 @@ export async function ProductGrid({
 
 export function ProductGridSkeleton() {
 	return (
-		<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 max-w-7xl mx-auto">
+		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 max-w-7xl mx-auto">
 			{Array.from({ length: 10 }).map((_, i) => (
 				<div
 					key={i}
