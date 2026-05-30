@@ -15,15 +15,15 @@ export function CartSidebar() {
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex justify-end">
-			{/* Fondo oscuro */}
+		<div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end">
+			{/* Dark backdrop */}
 			<div
 				className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
 				onClick={closeCart}
 			/>
 
-			{/* Panel lateral del carrito */}
-			<div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+			{/* Cart panel — slides up from bottom on mobile, in from right on desktop */}
+			<div className="relative w-full md:max-w-md bg-white md:h-full shadow-2xl flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300 rounded-t-2xl md:rounded-none max-h-[90vh] md:max-h-full">
 				<div className="flex items-center justify-between p-5 border-b border-slate-100">
 					<h2 className="text-lg font-bold flex items-center gap-2">
 						<ShoppingCart size={20} />
@@ -31,7 +31,7 @@ export function CartSidebar() {
 					</h2>
 					<button
 						onClick={closeCart}
-						className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+						className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors min-w-11 min-h-11 flex items-center justify-center"
 					>
 						<X size={20} />
 					</button>
@@ -67,7 +67,7 @@ export function CartSidebar() {
 									<div className="flex items-center bg-white border border-slate-200 rounded-lg shadow-sm">
 										<button
 											onClick={() => updateQuantity(item.itemKey, -1)}
-											className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-l-lg transition-colors"
+											className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-l-lg transition-colors min-w-11 min-h-11 flex items-center justify-center"
 										>
 											{item.quantity === 1 ? (
 												<Trash2 size={14} className="text-red-400" />
@@ -80,7 +80,7 @@ export function CartSidebar() {
 										</span>
 										<button
 											onClick={() => updateQuantity(item.itemKey, 1)}
-											className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-r-lg transition-colors"
+											className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-r-lg transition-colors min-w-11 min-h-11 flex items-center justify-center"
 										>
 											<Plus size={14} />
 										</button>
@@ -91,7 +91,7 @@ export function CartSidebar() {
 					)}
 				</div>
 
-				{/* Resumen del Total */}
+				{/* Total summary */}
 				{items.length > 0 && (
 					<div className="p-5 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
 						<div className="flex justify-between items-center">

@@ -11,7 +11,7 @@ export function CartButton() {
 	return (
 		<button
 			onClick={openCart}
-			className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
+			className="relative p-2 rounded-full hover:bg-slate-100 transition-colors min-w-11 min-h-11 flex items-center justify-center"
 		>
 			<ShoppingCart size={24} className="text-slate-700" />
 			{totalItems > 0 && (
