@@ -2,9 +2,10 @@ import React, { Suspense } from "react";
 import Link from "next/link";
 import { SearchBar } from "./SearchBar";
 import { CartButton } from "./CartButton";
+import { CategoriesToggleButton } from "./CategoriesToggleButton";
 import { ShoppingBasket } from "lucide-react";
 
-export function Header() {
+export function Header(): React.ReactElement {
 	return (
 		<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
 			<div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -19,17 +20,16 @@ export function Header() {
 					</span>
 				</Link>
 
-				{/* Search Bar - Client Component */}
-				<div className="flex-1 max-w-2xl mx-auto">
-					<Suspense
-						fallback={<div className="h-10 w-full rounded-full bg-slate-100" />}
-					>
+				{/* Search Bar — full width on mobile, constrained on desktop */}
+				<div className="flex-1 w-full max-w-2xl mx-auto">
+					<Suspense fallback={<div className="h-10 w-full rounded-full bg-slate-100" />}>
 						<SearchBar />
 					</Suspense>
 				</div>
 
-				{/* Actions */}
-				<div className="flex items-center gap-2 shrink-0">
+				{/* Desktop actions: categories toggle + cart */}
+				<div className="hidden md:flex items-center gap-2 shrink-0">
+					<CategoriesToggleButton />
 					<CartButton />
 				</div>
 			</div>

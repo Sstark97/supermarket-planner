@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { CategoryFilter } from "@/components/CategoryFilter";
+import { CategoryFilterBar } from "@/components/CategoryFilterBar";
 import { FilterMenu } from "@/components/FilterMenu";
 import { ProductGrid, ProductGridSkeleton } from "@/components/ProductGrid";
 import { ProductSearchFiltersMapper } from "@/features/product-search/filters";
@@ -20,29 +20,26 @@ export default async function Home({
 
 	return (
 		<div className="flex flex-col min-h-full">
-			<div className="bg-white border-b border-slate-100 pt-6 pb-2 sticky top-16 z-30">
-				<div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-					<CategoryFilter />
-					<div className="flex justify-end pb-2 md:pb-0">
-						<FilterMenu
-							key={`filters-${query}-${category}-${supermarket}-${sortBy}`}
-						/>
-					</div>
-				</div>
-			</div>
+			<CategoryFilterBar />
 
 			<div className="flex-1 py-8">
-				<div className="max-w-7xl mx-auto px-4 mb-6">
-					<h1 className="text-2xl font-bold text-slate-800">
-						{query
-							? `Resultados para "${query}"`
-							: category
-								? `Categoría: ${category}`
-								: "Todos los productos"}
-					</h1>
-					<p className="text-slate-500 mt-1">
-						Encontrando los mejores precios en Las Palmas...
-					</p>
+				{/* Heading row — FilterMenu placed here on desktop, hidden on mobile */}
+				<div className="max-w-7xl mx-auto px-4 mb-6 flex items-start justify-between gap-4">
+					<div>
+						<h1 className="text-2xl font-bold text-slate-800">
+							{query
+								? `Resultados para "${query}"`
+								: category
+									? `Categoría: ${category}`
+									: "Todos los productos"}
+						</h1>
+						<p className="text-slate-500 mt-1">
+							Encontrando los mejores precios en Las Palmas...
+						</p>
+					</div>
+					<FilterMenu
+						key={`filters-${query}-${category}-${supermarket}-${sortBy}`}
+					/>
 				</div>
 
 				<Suspense
