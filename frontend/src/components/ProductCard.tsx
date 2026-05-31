@@ -1,5 +1,5 @@
 import React from 'react';
-import { IProduct } from '../types';
+import { IProduct } from '@/types';
 import { SupermarketBadge } from './SupermarketBadge';
 import { AddToCartButton } from './AddToCartButton';
 

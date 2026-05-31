@@ -1,8 +1,8 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useCartStore } from "../store/cartStore";
-import { IProduct } from "../types";
+import { useCartStore } from "@/store/cartStore";
+import { IProduct } from "@/types";
 
 export function AddToCartButton({ product }: { product: IProduct }) {
 	const addItem = useCartStore((state) => state.addItem);

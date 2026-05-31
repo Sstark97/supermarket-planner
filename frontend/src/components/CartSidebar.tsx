@@ -1,8 +1,8 @@
 "use client";
 
 import { ShoppingCart, X, Plus, Minus, Trash2 } from "lucide-react";
-import { useCartStore } from "../store/cartStore";
-import { useCartUiStore } from "../store/cartUiStore";
+import { useCartStore } from "@/store/cartStore";
+import { useCartUiStore } from "@/store/cartUiStore";
 import { SupermarketBadge } from "./SupermarketBadge";
 
 export function CartSidebar() {

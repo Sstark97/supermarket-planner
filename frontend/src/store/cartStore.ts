@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { IProduct } from "../types";
+import { IProduct } from "@/types";
 
 export interface CartItem {
 	itemKey: string;

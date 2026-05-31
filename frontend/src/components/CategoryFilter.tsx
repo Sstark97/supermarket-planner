@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ProductCategory } from "../types";
+import { ProductCategory } from "@/types";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
 const CATEGORIES = Object.values(ProductCategory);
