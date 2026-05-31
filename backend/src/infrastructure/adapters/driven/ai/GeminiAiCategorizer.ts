@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ProductCategory } from "../../../../domain/entities/IProduct";
-import type { AiCategorizer } from "../../../../application/ports/outgoing/AiCategorizer";
+import { ProductCategory } from "@domain/entities/IProduct";
+import type { AiCategorizer } from "@application/ports/outgoing/AiCategorizer";
 
 interface GeminiLikeModel {
 	generateContent(prompt: string): Promise<{ response: { text(): string } }>;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PlaywrightScraperAdapterBase } from "./PlaywrightScraperAdapterBase";
-import type { IProduct } from "../../../../domain/entities/IProduct";
+import type { IProduct } from "@domain/entities/IProduct";
 
 class TestScraper extends PlaywrightScraperAdapterBase {
 	readonly name = "TestScraper";

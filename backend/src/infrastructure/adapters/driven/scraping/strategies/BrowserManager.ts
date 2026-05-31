@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext } from "playwright";
 import { chromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { config } from "../../../../config/index";
+import { config } from "@infrastructure/config/index";
 
 let stealthConfigured = false;
 

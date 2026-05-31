@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type {
 	CircuitBreakerStatus,
 	SupermarketSearchPort,
-} from "../../ports/outgoing/SupermarketSearchPort";
-import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
-import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
+} from "@application/ports/outgoing/SupermarketSearchPort";
+import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
+import { ProductCategory, type IProduct } from "@domain/entities/IProduct";
 import { TriggerManualScrapeUseCase } from "./TriggerManualScrapeUseCase";
 
 const silentLogger: LoggerPort = {

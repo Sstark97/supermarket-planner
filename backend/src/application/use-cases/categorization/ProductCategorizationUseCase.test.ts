@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { ProductCategory } from "../../../domain/entities/IProduct";
-import type { AiCategorizer } from "../../ports/outgoing/AiCategorizer";
-import type { KeywordCategorizer } from "../../ports/outgoing/KeywordCategorizer";
+import { ProductCategory } from "@domain/entities/IProduct";
+import type { AiCategorizer } from "@application/ports/outgoing/AiCategorizer";
+import type { KeywordCategorizer } from "@application/ports/outgoing/KeywordCategorizer";
 import { ProductCategorizationUseCase } from "./ProductCategorizationUseCase";
 
 describe("ProductCategorizationUseCase", () => {

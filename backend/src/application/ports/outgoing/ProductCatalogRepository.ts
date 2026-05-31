@@ -1,4 +1,4 @@
-import type { IProduct } from "../../../domain/entities/IProduct";
+import type { IProduct } from "@domain/entities/IProduct";
 
 export interface ProductCatalogFilters {
 	query?: string;

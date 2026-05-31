@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { IProduct } from "../../../../../domain/entities/IProduct";
-import { ProductCategory } from "../../../../../domain/entities/IProduct";
-import { buildProductSku } from "../../../../../domain/services/ProductIdentity";
+import type { IProduct } from "@domain/entities/IProduct";
+import { ProductCategory } from "@domain/entities/IProduct";
+import { buildProductSku } from "@domain/services/ProductIdentity";
 
 const prismaProductRecordSchema = z.object({
 	id: z.string(),

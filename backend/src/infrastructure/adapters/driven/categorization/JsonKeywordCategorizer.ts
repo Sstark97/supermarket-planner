@@ -1,6 +1,6 @@
-import type { ProductCategory } from "../../../../domain/entities/IProduct";
-import type { KeywordCategorizer } from "../../../../application/ports/outgoing/KeywordCategorizer";
-import keywordMapJson from "../../../config/category-keywords.json";
+import type { ProductCategory } from "@domain/entities/IProduct";
+import type { KeywordCategorizer } from "@application/ports/outgoing/KeywordCategorizer";
+import keywordMapJson from "@infrastructure/config/category-keywords.json";
 
 type KeywordRules = Record<string, ProductCategory>;
 
