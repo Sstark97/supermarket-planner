@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SearchBar } from "./SearchBar";
 import { CartButton } from "./CartButton";
 import { CategoriesToggleButton } from "./CategoriesToggleButton";
+import { LoginButton } from "./LoginButton";
 import { ShoppingBasket } from "lucide-react";
 
 export function Header(): React.ReactElement {
@@ -27,10 +28,11 @@ export function Header(): React.ReactElement {
 					</Suspense>
 				</div>
 
-				{/* Desktop actions: categories toggle + cart */}
+				{/* Desktop actions: categories toggle + cart + login */}
 				<div className="hidden md:flex items-center gap-2 shrink-0">
 					<CategoriesToggleButton />
 					<CartButton />
+					<LoginButton />
 				</div>
 			</div>
 		</header>
