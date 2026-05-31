@@ -50,6 +50,24 @@ describe("cartStore", () => {
 		expect(state.totalPrice).toBe(5);
 	});
 
+	it("clears all items and resets totals to zero", () => {
+		const productA = makeProduct({ id: "a", supermarket: "Mercadona", price: 2 });
+		const productB = makeProduct({ id: "b", supermarket: "Carrefour", price: 3 });
+
+		const store = useCartStore.getState();
+		store.addItem(productA);
+		store.addItem(productB);
+		store.addItem(productB);
+
+		useCartStore.getState().clearCart();
+
+		const state = useCartStore.getState();
+		expect(state.items).toHaveLength(0);
+		expect(state.totalItems).toBe(0);
+		expect(state.totalPrice).toBe(0);
+		expect(Object.keys(state.itemRegistry)).toHaveLength(0);
+	});
+
 	it("precomputes totals when quantities change", () => {
 		const product = makeProduct({
 			id: "burger-1",

@@ -17,6 +17,7 @@ interface CartState {
 	addItem: (product: IProduct) => void;
 	removeItem: (itemKey: string) => void;
 	updateQuantity: (itemKey: string, delta: number) => void;
+	clearCart: () => void;
 }
 
 class CartStateProjector {
@@ -96,4 +97,6 @@ export const useCartStore = create<CartState>((set) => ({
 			return CartStateProjector.toSnapshot(nextRegistry);
 		});
 	},
+
+	clearCart: () => set(CartStateProjector.toSnapshot({})),
 }));
