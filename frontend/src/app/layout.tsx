@@ -5,6 +5,8 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { CartSidebar } from '@/components/CartSidebar';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { SessionProvider } from '@/components/providers/SessionProvider';
+import { ToastProvider } from '@/components/Toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,12 +23,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
   return (
     <html lang="es">
       <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col`}>
-        <Header />
-        <main className="flex-1 pb-16 md:pb-0">
-          {children}
-        </main>
-        <CartSidebar />
-        <MobileBottomNav />
+        <SessionProvider>
+          <ToastProvider>
+            <Header />
+            <main className="flex-1 pb-16 md:pb-0">
+              {children}
+            </main>
+            <CartSidebar />
+            <MobileBottomNav />
+          </ToastProvider>
+        </SessionProvider>
       </body>
     </html>
   );
