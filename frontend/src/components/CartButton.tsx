@@ -1,8 +1,8 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
-import { useCartStore } from "../store/cartStore";
-import { useCartUiStore } from "../store/cartUiStore";
+import { useCartStore } from "@/store/cartStore";
+import { useCartUiStore } from "@/store/cartUiStore";
 
 export function CartButton() {
 	const totalItems = useCartStore((state) => state.totalItems);

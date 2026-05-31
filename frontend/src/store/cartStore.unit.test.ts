@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ProductCategory, type IProduct } from "../types";
+import { ProductCategory, type IProduct } from "@/types";
 import { useCartStore } from "./cartStore";
 
 function makeProduct(input: {
