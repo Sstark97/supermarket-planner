@@ -30,7 +30,7 @@ services:
       PORT: 3000
       DB_HOST: database
       DB_PORT: 5432
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:${POSTGRES_PORT:-5432}/${POSTGRES_DB}?schema=public
       LOG_LEVEL: ${LOG_LEVEL:-info}
       PLAYWRIGHT_HEADLESS: ${PLAYWRIGHT_HEADLESS:-true}
       CIRCUIT_BREAKER_THRESHOLD: ${CIRCUIT_BREAKER_THRESHOLD:-5}
@@ -38,6 +38,7 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
       POSTAL_CODE: ${POSTAL_CODE:-35010}
       POSTGRES_USER: ${POSTGRES_USER}
+      AUTH_SECRET: ${AUTH_SECRET}
     depends_on:
       database:
         condition: service_healthy
@@ -53,12 +54,18 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     container_name: supermarket-planner-frontend
     restart: unless-stopped
     environment:
       PORT: 3000
       API_URL: http://backend:3000
       INTERNAL_APP_URL: http://frontend:3000
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3001}
     depends_on:
       - backend
     ports:
