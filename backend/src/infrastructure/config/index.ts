@@ -9,4 +9,5 @@ export const config = {
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
     geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash-lite',
     postalCode: process.env.POSTAL_CODE ?? '35010',
+    authSecret: process.env.AUTH_SECRET ?? '',
 };

@@ -3,9 +3,13 @@ import express, { type Express } from "express";
 import { RefreshProductsCatalogUseCase } from "@application/use-cases/search/RefreshProductsCatalogUseCase";
 import { SearchProductsUseCase } from "@application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
+import { SaveShoppingSessionUseCase } from "@application/use-cases/shopping-session/SaveShoppingSessionUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
+import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
+import { JwtAuthMiddleware } from "@infrastructure/adapters/driving/http/middleware/JwtAuthMiddleware";
 import { ScraperCron } from "@infrastructure/adapters/driving/cron/scraperCron";
 import { PrismaProductRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaProductRepository";
+import { PrismaShoppingSessionRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaShoppingSessionRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "@infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
 import { AldiScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/AldiScraperAdapter";
 import { CarrefourScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
@@ -14,6 +18,7 @@ import { LidlScraperAdapter } from "@infrastructure/adapters/driven/scraping/sup
 import { MercadonaScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
 import { logger } from "@infrastructure/logging/logger";
 import { errorHandler } from "@infrastructure/adapters/driving/http/errorHandler";
+import { config } from "@infrastructure/config";
 import type { PlaywrightScraperAdapterBase } from "@infrastructure/adapters/driven/scraping/PlaywrightScraperAdapterBase";
 
 export interface BootstrappedBackendApplication {
@@ -62,6 +67,16 @@ export class BackendCompositionBootstrap {
 			productCatalogRepository,
 		);
 
+		const shoppingSessionRepository = new PrismaShoppingSessionRepository();
+		const saveShoppingSessionUseCase = new SaveShoppingSessionUseCase(
+			shoppingSessionRepository,
+			logger,
+		);
+		const shoppingSessionController = new ShoppingSessionController(
+			saveShoppingSessionUseCase,
+		);
+		const jwtAuthMiddleware = new JwtAuthMiddleware(config.authSecret, logger);
+
 		app.get("/health", (_req, res) => {
 			res.json({
 				status: "ok",
@@ -78,6 +93,12 @@ export class BackendCompositionBootstrap {
 		});
 
 		app.get("/search", searchController.search);
+
+		app.post(
+			"/api/shopping-sessions",
+			jwtAuthMiddleware.authenticate,
+			shoppingSessionController.save,
+		);
 
 		app.post("/admin/scrape/:query", async (req, res) => {
 			try {
