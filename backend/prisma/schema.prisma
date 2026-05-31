@@ -26,3 +26,33 @@ model Product {
   @@index([category])
   @@index([supermarket])
 }
+
+model ShoppingSession {
+  id         String                @id @default(uuid())
+  userId     String
+  shoppedAt  DateTime
+  totalPrice Float
+  createdAt  DateTime              @default(now())
+  items      ShoppingSessionItem[]
+
+  @@index([userId])
+  @@index([shoppedAt])
+}
+
+model ShoppingSessionItem {
+  id           String          @id @default(uuid())
+  sessionId    String
+  session      ShoppingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  productName  String
+  supermarket  String
+  category     String
+  price        Float
+  pricePerUnit Float
+  unit         String
+  taxType      String
+  quantity     Int
+  image        String?
+  url          String?
+
+  @@index([sessionId])
+}
