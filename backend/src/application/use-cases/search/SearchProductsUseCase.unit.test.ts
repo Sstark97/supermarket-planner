@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ProductCatalogRepository } from "../../ports/outgoing/ProductCatalogRepository";
-import type { BackgroundRefreshQueuePort } from "../../ports/outgoing/BackgroundRefreshQueuePort";
-import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
-import { ProductCategory, type IProduct } from "../../../domain/entities/IProduct";
+import type { ProductCatalogRepository } from "@application/ports/outgoing/ProductCatalogRepository";
+import type { BackgroundRefreshQueuePort } from "@application/ports/outgoing/BackgroundRefreshQueuePort";
+import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
+import { ProductCategory, type IProduct } from "@domain/entities/IProduct";
 import { SearchProductsUseCase } from "./SearchProductsUseCase";
 
 const silentLogger: LoggerPort = {

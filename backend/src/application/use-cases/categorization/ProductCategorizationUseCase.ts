@@ -1,7 +1,7 @@
-import { ProductCategory } from "../../../domain/entities/IProduct";
-import type { KeywordCategorizer } from "../../ports/outgoing/KeywordCategorizer";
-import type { AiCategorizer } from "../../ports/outgoing/AiCategorizer";
-import type { LoggerPort } from "../../ports/outgoing/LoggerPort";
+import { ProductCategory } from "@domain/entities/IProduct";
+import type { KeywordCategorizer } from "@application/ports/outgoing/KeywordCategorizer";
+import type { AiCategorizer } from "@application/ports/outgoing/AiCategorizer";
+import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
 
 export interface ProductCategorizationUseCaseDeps {
 	keywordCategorizer: KeywordCategorizer;

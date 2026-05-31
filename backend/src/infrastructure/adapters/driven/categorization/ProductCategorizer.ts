@@ -1,6 +1,6 @@
-import { config } from "../../../config";
-import { logger } from "../../../logging/logger";
-import { ProductCategorizationUseCase } from "../../../../application/use-cases/categorization/ProductCategorizationUseCase";
+import { config } from "@infrastructure/config";
+import { logger } from "@infrastructure/logging/logger";
+import { ProductCategorizationUseCase } from "@application/use-cases/categorization/ProductCategorizationUseCase";
 import { GeminiAiCategorizer } from "../ai/GeminiAiCategorizer";
 import { JsonKeywordCategorizer } from "./JsonKeywordCategorizer";
 

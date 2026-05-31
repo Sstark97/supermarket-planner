@@ -1,12 +1,12 @@
 import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
-import type { HiperDinoRawProduct } from "../../../../../application/dto/ScraperPayloads";
+import type { HiperDinoRawProduct } from "@application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../../../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../../../../domain/entities/IProduct";
-import { categorize } from "../../categorization/ProductCategorizer";
-import { logger } from "../../../../logging/logger";
+} from "@domain/services/ProductMappingPolicy";
+import type { IProduct } from "@domain/entities/IProduct";
+import { categorize } from "@infrastructure/adapters/driven/categorization/ProductCategorizer";
+import { logger } from "@infrastructure/logging/logger";
 import { BrowserManager } from "../strategies/BrowserManager";
 import {
 	blockUnnecessaryResources,

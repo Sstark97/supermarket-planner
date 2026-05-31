@@ -2,14 +2,14 @@ import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import type {
 	AldiAlgoliaHit,
 	AldiAlgoliaMultiQueryResponse,
-} from "../../../../../application/dto/ScraperPayloads";
+} from "@application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../../../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../../../../domain/entities/IProduct";
-import { categorize } from "../../categorization/ProductCategorizer";
-import { logger } from "../../../../logging/logger";
+} from "@domain/services/ProductMappingPolicy";
+import type { IProduct } from "@domain/entities/IProduct";
+import { categorize } from "@infrastructure/adapters/driven/categorization/ProductCategorizer";
+import { logger } from "@infrastructure/logging/logger";
 
 const ALDI_ALGOLIA_URL =
 	"https://l9knu74io7-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.2)";

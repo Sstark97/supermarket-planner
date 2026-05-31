@@ -4,14 +4,14 @@ import type { BrowserContext, Page } from "playwright";
 import type {
 	CarrefourSearchApiResponse,
 	CarrefourSearchDoc,
-} from "../../../../../application/dto/ScraperPayloads";
+} from "@application/dto/ScraperPayloads";
 import {
 	defaultProductMapper,
 	type ProductMapper,
-} from "../../../../../domain/services/ProductMappingPolicy";
-import type { IProduct } from "../../../../../domain/entities/IProduct";
-import { categorize } from "../../categorization/ProductCategorizer";
-import { logger } from "../../../../logging/logger";
+} from "@domain/services/ProductMappingPolicy";
+import type { IProduct } from "@domain/entities/IProduct";
+import { categorize } from "@infrastructure/adapters/driven/categorization/ProductCategorizer";
+import { logger } from "@infrastructure/logging/logger";
 import { PlaywrightScraperAdapterBase } from "../PlaywrightScraperAdapterBase";
 import {
 	getRandomUserAgent,

@@ -1,10 +1,10 @@
 import type {
 	ProductCatalogFilters,
 	ProductCatalogRepository,
-} from "../../../../../application/ports/outgoing/ProductCatalogRepository";
-import type { IProduct } from "../../../../../domain/entities/IProduct";
+} from "@application/ports/outgoing/ProductCatalogRepository";
+import type { IProduct } from "@domain/entities/IProduct";
 import { prisma } from "./prisma";
-import { logger } from "../../../../logging/logger";
+import { logger } from "@infrastructure/logging/logger";
 import {
 	mapDomainProductToPrismaUpsertPayload,
 	mapPrismaProductRecordToDomain,

@@ -1,20 +1,20 @@
 import cors from "cors";
 import express, { type Express } from "express";
-import { RefreshProductsCatalogUseCase } from "../../application/use-cases/search/RefreshProductsCatalogUseCase";
-import { SearchProductsUseCase } from "../../application/use-cases/search/SearchProductsUseCase";
-import { TriggerManualScrapeUseCase } from "../../application/use-cases/search/TriggerManualScrapeUseCase";
-import { SearchController } from "../adapters/driving/http/SearchController";
-import { ScraperCron } from "../adapters/driving/cron/scraperCron";
-import { PrismaProductRepository } from "../adapters/driven/persistence/prisma/PrismaProductRepository";
-import { InMemoryBackgroundRefreshQueueAdapter } from "../adapters/driven/queue/BackgroundRefreshQueue";
-import { AldiScraperAdapter } from "../adapters/driven/scraping/supermarkets/AldiScraperAdapter";
-import { CarrefourScraperAdapter } from "../adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
-import { HiperDinoScraperAdapter } from "../adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
-import { LidlScraperAdapter } from "../adapters/driven/scraping/supermarkets/LidlScraperAdapter";
-import { MercadonaScraperAdapter } from "../adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
-import { logger } from "../logging/logger";
-import { errorHandler } from "../adapters/driving/http/errorHandler";
-import type { PlaywrightScraperAdapterBase } from "../adapters/driven/scraping/PlaywrightScraperAdapterBase";
+import { RefreshProductsCatalogUseCase } from "@application/use-cases/search/RefreshProductsCatalogUseCase";
+import { SearchProductsUseCase } from "@application/use-cases/search/SearchProductsUseCase";
+import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
+import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
+import { ScraperCron } from "@infrastructure/adapters/driving/cron/scraperCron";
+import { PrismaProductRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaProductRepository";
+import { InMemoryBackgroundRefreshQueueAdapter } from "@infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
+import { AldiScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/AldiScraperAdapter";
+import { CarrefourScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
+import { HiperDinoScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
+import { LidlScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/LidlScraperAdapter";
+import { MercadonaScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
+import { logger } from "@infrastructure/logging/logger";
+import { errorHandler } from "@infrastructure/adapters/driving/http/errorHandler";
+import type { PlaywrightScraperAdapterBase } from "@infrastructure/adapters/driven/scraping/PlaywrightScraperAdapterBase";
 
 export interface BootstrappedBackendApplication {
 	app: Express;
