@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "backend",
+      "path": "backend"
+    },
+    {
+      "name": "frontend",
+      "path": "frontend"
+    }
+  ],
+  "settings": {
+    "typescript.tsconfig.autoDetect": "on"
+  }
+}
