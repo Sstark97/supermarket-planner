@@ -4,12 +4,15 @@ import { RefreshProductsCatalogUseCase } from "@application/use-cases/search/Ref
 import { SearchProductsUseCase } from "@application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
 import { SaveShoppingSessionUseCase } from "@application/use-cases/shopping-session/SaveShoppingSessionUseCase";
+import { MergeCartUseCase } from "@application/use-cases/active-cart/MergeCartUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
 import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
+import { ActiveCartController } from "@infrastructure/adapters/driving/http/ActiveCartController";
 import { JwtAuthMiddleware } from "@infrastructure/adapters/driving/http/middleware/JwtAuthMiddleware";
 import { ScraperCron } from "@infrastructure/adapters/driving/cron/scraperCron";
 import { PrismaProductRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaProductRepository";
 import { PrismaShoppingSessionRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaShoppingSessionRepository";
+import { PrismaActiveCartRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaActiveCartRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "@infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
 import { AldiScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/AldiScraperAdapter";
 import { CarrefourScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
@@ -75,6 +78,11 @@ export class BackendCompositionBootstrap {
 		const shoppingSessionController = new ShoppingSessionController(
 			saveShoppingSessionUseCase,
 		);
+
+		const activeCartRepository = new PrismaActiveCartRepository();
+		const mergeCartUseCase = new MergeCartUseCase(activeCartRepository, logger);
+		const activeCartController = new ActiveCartController(mergeCartUseCase);
+
 		const jwtAuthMiddleware = new JwtAuthMiddleware(config.authSecret, logger);
 
 		app.get("/health", (_req, res) => {
@@ -98,6 +106,12 @@ export class BackendCompositionBootstrap {
 			"/api/shopping-sessions",
 			jwtAuthMiddleware.authenticate,
 			shoppingSessionController.save,
+		);
+
+		app.post(
+			"/api/cart/merge",
+			jwtAuthMiddleware.authenticate,
+			activeCartController.merge,
 		);
 
 		app.post("/admin/scrape/:query", async (req, res) => {
