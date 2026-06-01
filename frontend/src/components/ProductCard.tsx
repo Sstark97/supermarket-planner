@@ -20,7 +20,7 @@ export function ProductCard({ product }: { product: IProduct }) {
       <div>
         <div className="flex justify-between items-start mb-2">
           <SupermarketBadge supermarket={product.supermarket} />
-          <span className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-md line-clamp-1 max-w-[120px]">
+          <span className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-md line-clamp-1 max-w-30">
             {categoryLabel}
           </span>
         </div>
