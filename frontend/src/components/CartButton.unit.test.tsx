@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ProductCategory, type IProduct } from "@/types";
 import { CartButton } from "./CartButton";
@@ -29,22 +29,17 @@ describe("CartButton", () => {
 		useCartUiStore.setState(useCartUiStore.getInitialState(), true);
 	});
 
-	it("shows total items badge after client hydration completes", async () => {
+	it("shows total items badge from cart store selector", () => {
 		useCartStore.getState().addItem(buildProduct("1", "Carrefour", 2));
 		useCartStore.getState().addItem(buildProduct("1", "Carrefour", 2));
 
-		await act(async () => {
-			render(<CartButton />);
-		});
+		render(<CartButton />);
 
 		expect(screen.getByText("2")).toBeTruthy();
 	});
 
-	it("does not show the badge when the store has zero items", async () => {
-		// Cart is empty — badge should never appear regardless of hydration state
-		await act(async () => {
-			render(<CartButton />);
-		});
+	it("does not show the badge when the store has zero items", () => {
+		render(<CartButton />);
 
 		expect(screen.queryByText("0")).toBeNull();
 	});
