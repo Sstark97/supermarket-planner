@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { MergeCartUseCasePort } from "@application/ports/incoming/MergeCartUseCasePort";
 import type { ActiveCartRepository } from "@application/ports/outgoing/ActiveCartRepository";
 import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
-import type { MergeCartInput, MergeCartResult } from "./contracts";
+import type { MergeCartInput, MergeCartItemInput, MergeCartResult } from "./contracts";
 import { ActiveCartMerger } from "@domain/services/ActiveCartMerger";
 import type { ActiveCart, ActiveCartItem } from "@domain/entities/ActiveCart";
 
@@ -18,23 +18,8 @@ export class MergeCartUseCase implements MergeCartUseCasePort {
 		);
 
 		const existingCart = await this.activeCartRepository.findByUserId(input.userId);
-
 		const existingItems: readonly ActiveCartItem[] = existingCart?.items ?? [];
-
-		const incomingItems: ActiveCartItem[] = input.items.map((item) => ({
-			productId: item.productId,
-			productName: item.productName,
-			supermarket: item.supermarket,
-			category: item.category,
-			price: item.price,
-			pricePerUnit: item.pricePerUnit,
-			unit: item.unit,
-			taxType: item.taxType,
-			quantity: item.quantity,
-			image: item.image,
-			url: item.url,
-		}));
-
+		const incomingItems = input.items.map(MergeCartUseCase.toActiveCartItem);
 		const mergedItems = ActiveCartMerger.merge(existingItems, incomingItems);
 
 		const cartToUpsert: ActiveCart = {
@@ -50,11 +35,31 @@ export class MergeCartUseCase implements MergeCartUseCasePort {
 			`[MergeCartUseCase] cart upserted - id: "${savedCart.id}", totalItems: ${savedCart.items.length}`,
 		);
 
+		return MergeCartUseCase.toResult(savedCart);
+	}
+
+	private static toActiveCartItem(item: MergeCartItemInput): ActiveCartItem {
 		return {
-			cartId: savedCart.id,
-			userId: savedCart.userId,
-			totalItems: savedCart.items.length,
-			items: savedCart.items.map((item) => ({
+			productId: item.productId,
+			productName: item.productName,
+			supermarket: item.supermarket,
+			category: item.category,
+			price: item.price,
+			pricePerUnit: item.pricePerUnit,
+			unit: item.unit,
+			taxType: item.taxType,
+			quantity: item.quantity,
+			image: item.image,
+			url: item.url,
+		};
+	}
+
+	private static toResult(cart: ActiveCart): MergeCartResult {
+		return {
+			cartId: cart.id,
+			userId: cart.userId,
+			totalItems: cart.items.length,
+			items: cart.items.map((item: ActiveCartItem) => ({
 				productId: item.productId,
 				productName: item.productName,
 				supermarket: item.supermarket,
