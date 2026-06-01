@@ -56,3 +56,32 @@ model ShoppingSessionItem {
 
   @@index([sessionId])
 }
+
+model ActiveCart {
+  id        String           @id @default(uuid())
+  userId    String           @unique
+  updatedAt DateTime         @updatedAt
+  items     ActiveCartItem[]
+
+  @@index([userId])
+}
+
+model ActiveCartItem {
+  id           String     @id @default(uuid())
+  cartId       String
+  cart         ActiveCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId    String
+  productName  String
+  supermarket  String
+  category     String
+  price        Float
+  pricePerUnit Float
+  unit         String
+  taxType      String
+  quantity     Int
+  image        String?
+  url          String?
+
+  @@unique([cartId, supermarket, productName])
+  @@index([cartId])
+}
