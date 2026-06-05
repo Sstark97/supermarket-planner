@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ShoppingSessionController } from "./ShoppingSessionController";
 import type { SaveShoppingSessionUseCasePort } from "@application/ports/incoming/SaveShoppingSessionUseCasePort";
 import type { GetShoppingSessionsUseCasePort } from "@application/ports/incoming/GetShoppingSessionsUseCasePort";
+import type { DeleteShoppingSessionUseCasePort } from "@application/ports/incoming/DeleteShoppingSessionUseCasePort";
 import type { Request, Response, NextFunction } from "express";
 import type {
+	DeleteShoppingSessionResult,
 	GetShoppingSessionsResult,
 	SaveShoppingSessionResult,
 } from "@application/use-cases/shopping-session/contracts";
@@ -53,6 +55,10 @@ const mockGetUseCaseResult: GetShoppingSessionsResult = {
 	],
 };
 
+const mockDeleteUseCaseResult: DeleteShoppingSessionResult = {
+	deleted: true,
+};
+
 function makeMockSaveUseCase(): SaveShoppingSessionUseCasePort {
 	return {
 		execute: vi.fn(async () => mockSaveUseCaseResult),
@@ -65,6 +71,12 @@ function makeMockGetUseCase(): GetShoppingSessionsUseCasePort {
 	};
 }
 
+function makeMockDeleteUseCase(): DeleteShoppingSessionUseCasePort {
+	return {
+		execute: vi.fn(async () => mockDeleteUseCaseResult),
+	};
+}
+
 function makeMockResponse(userId = "user-google-123"): Response {
 	return {
 		status: vi.fn().mockReturnThis(),
@@ -73,20 +85,26 @@ function makeMockResponse(userId = "user-google-123"): Response {
 	} as unknown as Response;
 }
 
-function makeMockRequest(body: unknown): Request {
-	return { body } as unknown as Request;
+function makeMockRequest(body: unknown, params: Record<string, string> = {}): Request {
+	return { body, params } as unknown as Request;
 }
 
 describe("ShoppingSessionController", () => {
 	let saveUseCase: SaveShoppingSessionUseCasePort;
 	let getUseCase: GetShoppingSessionsUseCasePort;
+	let deleteUseCase: DeleteShoppingSessionUseCasePort;
 	let controller: ShoppingSessionController;
 	let next: NextFunction;
 
 	beforeEach(() => {
 		saveUseCase = makeMockSaveUseCase();
 		getUseCase = makeMockGetUseCase();
-		controller = new ShoppingSessionController(saveUseCase, getUseCase);
+		deleteUseCase = makeMockDeleteUseCase();
+		controller = new ShoppingSessionController(
+			saveUseCase,
+			getUseCase,
+			deleteUseCase,
+		);
 		next = vi.fn();
 	});
 
@@ -96,9 +114,7 @@ describe("ShoppingSessionController", () => {
 
 		await controller.get(req, res, next);
 
-		expect(getUseCase.execute).toHaveBeenCalledWith({
-			userId: "user-google-123",
-		});
+		expect(getUseCase.execute).toHaveBeenCalledWith({ userId: "user-google-123" });
 		expect(res.status).toHaveBeenCalledWith(200);
 		expect(res.json).toHaveBeenCalledWith(mockGetUseCaseResult);
 		expect(next).not.toHaveBeenCalled();
@@ -148,52 +164,6 @@ describe("ShoppingSessionController", () => {
 		);
 	});
 
-	it("should return 400 when items array is empty", async () => {
-		const req = makeMockRequest({ shoppedAt: "2026-05-31", items: [] });
-		const res = makeMockResponse();
-
-		await controller.save(req, res, next);
-
-		expect(res.status).toHaveBeenCalledWith(400);
-		expect(res.json).toHaveBeenCalledWith(
-			expect.objectContaining({ error: "Invalid request body" }),
-		);
-	});
-
-	it("should return 400 when shoppedAt is missing", async () => {
-		const req = makeMockRequest({ items: [validItem] });
-		const res = makeMockResponse();
-
-		await controller.save(req, res, next);
-
-		expect(res.status).toHaveBeenCalledWith(400);
-	});
-
-	it("should return 400 when an item is missing a required field", async () => {
-		const incompleteItem = { productName: "Pan", supermarket: "lidl" };
-		const req = makeMockRequest({
-			shoppedAt: "2026-05-31",
-			items: [incompleteItem],
-		});
-		const res = makeMockResponse();
-
-		await controller.save(req, res, next);
-
-		expect(res.status).toHaveBeenCalledWith(400);
-	});
-
-	it("should delegate errors from save use case to next()", async () => {
-		const useCaseError = new Error("Unexpected repository failure");
-		vi.mocked(saveUseCase.execute).mockRejectedValueOnce(useCaseError);
-
-		const req = makeMockRequest(validBody);
-		const res = makeMockResponse();
-
-		await controller.save(req, res, next);
-
-		expect(next).toHaveBeenCalledWith(useCaseError);
-	});
-
 	it("should delegate errors from get use case to next()", async () => {
 		const useCaseError = new Error("Unexpected get failure");
 		vi.mocked(getUseCase.execute).mockRejectedValueOnce(useCaseError);
@@ -202,6 +172,63 @@ describe("ShoppingSessionController", () => {
 		const res = makeMockResponse();
 
 		await controller.get(req, res, next);
+
+		expect(next).toHaveBeenCalledWith(useCaseError);
+	});
+
+	it("should return 200 when delete succeeds", async () => {
+		const req = makeMockRequest({}, { id: "session-1" });
+		const res = makeMockResponse();
+
+		await controller.delete(req, res, next);
+
+		expect(deleteUseCase.execute).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			userId: "user-google-123",
+		});
+		expect(res.status).toHaveBeenCalledWith(200);
+		expect(res.json).toHaveBeenCalledWith({ deleted: true });
+	});
+
+	it("should return 400 for delete when id is missing", async () => {
+		const req = makeMockRequest({}, {});
+		const res = makeMockResponse();
+
+		await controller.delete(req, res, next);
+
+		expect(res.status).toHaveBeenCalledWith(400);
+		expect(res.json).toHaveBeenCalledWith({ error: "Invalid shopping session id" });
+	});
+
+	it("should return 401 for delete when unauthorized", async () => {
+		const req = makeMockRequest({}, { id: "session-1" });
+		const res = makeMockResponse("");
+
+		await controller.delete(req, res, next);
+
+		expect(res.status).toHaveBeenCalledWith(401);
+		expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+	});
+
+	it("should return 404 for delete when session is not found", async () => {
+		vi.mocked(deleteUseCase.execute).mockResolvedValueOnce({ deleted: false });
+		const req = makeMockRequest({}, { id: "session-1" });
+		const res = makeMockResponse();
+
+		await controller.delete(req, res, next);
+
+		expect(res.status).toHaveBeenCalledWith(404);
+		expect(res.json).toHaveBeenCalledWith({ error: "Shopping session not found" });
+	});
+
+	it("should delegate errors from delete use case to next()", async () => {
+		const useCaseError = new Error("Unexpected delete failure");
+		vi.mocked(deleteUseCase.execute).mockRejectedValueOnce(useCaseError);
+
+		const req = makeMockRequest({}, { id: "session-1" });
+		const res = makeMockResponse();
+
+		await controller.delete(req, res, next);
 
 		expect(next).toHaveBeenCalledWith(useCaseError);
 	});

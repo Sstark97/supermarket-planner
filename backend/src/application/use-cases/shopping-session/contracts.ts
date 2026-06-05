@@ -51,3 +51,12 @@ export interface ShoppingSessionHistoryEntry {
 export interface GetShoppingSessionsResult {
 	sessions: ShoppingSessionHistoryEntry[];
 }
+
+export interface DeleteShoppingSessionInput {
+	sessionId: string;
+	userId: string;
+}
+
+export interface DeleteShoppingSessionResult {
+	deleted: boolean;
+}

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 import type { SaveShoppingSessionUseCasePort } from "@application/ports/incoming/SaveShoppingSessionUseCasePort";
 import type { GetShoppingSessionsUseCasePort } from "@application/ports/incoming/GetShoppingSessionsUseCasePort";
+import type { DeleteShoppingSessionUseCasePort } from "@application/ports/incoming/DeleteShoppingSessionUseCasePort";
 
 const shoppingSessionItemSchema = z.object({
 	productName: z.string().min(1),
@@ -23,10 +24,15 @@ const saveShoppingSessionBodySchema = z.object({
 	}),
 });
 
+const shoppingSessionIdParamsSchema = z.object({
+	id: z.string().min(1),
+});
+
 export class ShoppingSessionController {
 	constructor(
 		private readonly saveShoppingSessionUseCase: SaveShoppingSessionUseCasePort,
 		private readonly getShoppingSessionsUseCase: GetShoppingSessionsUseCasePort,
+		private readonly deleteShoppingSessionUseCase: DeleteShoppingSessionUseCasePort,
 	) {}
 
 	get = async (
@@ -43,6 +49,40 @@ export class ShoppingSessionController {
 
 			const result = await this.getShoppingSessionsUseCase.execute({ userId });
 			res.status(200).json(result);
+		} catch (error) {
+			next(error);
+		}
+	};
+
+	delete = async (
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> => {
+		const paramsResult = shoppingSessionIdParamsSchema.safeParse(req.params);
+		if (!paramsResult.success) {
+			res.status(400).json({ error: "Invalid shopping session id" });
+			return;
+		}
+
+		try {
+			const userId: unknown = res.locals.userId;
+			if (typeof userId !== "string" || userId.length === 0) {
+				res.status(401).json({ error: "Unauthorized" });
+				return;
+			}
+
+			const result = await this.deleteShoppingSessionUseCase.execute({
+				sessionId: paramsResult.data.id,
+				userId,
+			});
+
+			if (!result.deleted) {
+				res.status(404).json({ error: "Shopping session not found" });
+				return;
+			}
+
+			res.status(200).json({ deleted: true });
 		} catch (error) {
 			next(error);
 		}

@@ -28,6 +28,7 @@ const makeValidInput = (
 const makeMockRepository = (): ShoppingSessionRepository => ({
 	save: vi.fn(async (session: ShoppingSession) => session),
 	findByUserId: vi.fn(async () => []),
+	deleteByIdForUser: vi.fn(async () => false),
 });
 
 const makeMockLogger = (): LoggerPort => ({
