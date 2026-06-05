@@ -1,5 +1,6 @@
 import type {
 	DeleteShoppingSessionResponse,
+	GetShoppingSessionMetricsResponse,
 	ListShoppingSessionsResponse,
 	SaveShoppingSessionRequest,
 	SaveShoppingSessionResponse,
@@ -17,6 +18,11 @@ type ListShoppingSessionsApiResponse = ListShoppingSessionsResponse & {
 type DeleteShoppingSessionApiResponse = DeleteShoppingSessionResponse & {
 	error?: string;
 };
+
+type GetShoppingSessionMetricsApiResponse =
+	GetShoppingSessionMetricsResponse & {
+		error?: string;
+	};
 
 export class ShoppingSessionHttpClient implements ShoppingSessionGateway {
 	constructor(private readonly baseUrl: string) {}
@@ -83,6 +89,28 @@ export class ShoppingSessionHttpClient implements ShoppingSessionGateway {
 		});
 
 		const json = (await res.json()) as DeleteShoppingSessionApiResponse;
+
+		if (!res.ok) {
+			throw new Error(
+				`Shopping session API error ${res.status}: ${json.error ?? "Unknown error"}`,
+			);
+		}
+
+		return json;
+	}
+
+	async getMetrics(token: string): Promise<GetShoppingSessionMetricsResponse> {
+		const url = `${this.baseUrl}/api/shopping-sessions/metrics`;
+
+		const res = await fetch(url, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			cache: "no-store",
+		});
+
+		const json = (await res.json()) as GetShoppingSessionMetricsApiResponse;
 
 		if (!res.ok) {
 			throw new Error(
