@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 import type { SaveShoppingSessionUseCasePort } from "@application/ports/incoming/SaveShoppingSessionUseCasePort";
+import type { GetShoppingSessionsUseCasePort } from "@application/ports/incoming/GetShoppingSessionsUseCasePort";
 
 const shoppingSessionItemSchema = z.object({
 	productName: z.string().min(1),
@@ -25,7 +26,27 @@ const saveShoppingSessionBodySchema = z.object({
 export class ShoppingSessionController {
 	constructor(
 		private readonly saveShoppingSessionUseCase: SaveShoppingSessionUseCasePort,
+		private readonly getShoppingSessionsUseCase: GetShoppingSessionsUseCasePort,
 	) {}
+
+	get = async (
+		_req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> => {
+		try {
+			const userId: unknown = res.locals.userId;
+			if (typeof userId !== "string" || userId.length === 0) {
+				res.status(401).json({ error: "Unauthorized" });
+				return;
+			}
+
+			const result = await this.getShoppingSessionsUseCase.execute({ userId });
+			res.status(200).json(result);
+		} catch (error) {
+			next(error);
+		}
+	};
 
 	save = async (
 		req: Request,
