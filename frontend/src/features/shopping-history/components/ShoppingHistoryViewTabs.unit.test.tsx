@@ -23,7 +23,7 @@ describe("ShoppingHistoryViewTabs", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("tab", { name: "Insights" }));
+		fireEvent.click(screen.getByRole("tab", { name: "Analítica" }));
 
 		expect(onViewChange).toHaveBeenCalledWith("insights");
 	});
