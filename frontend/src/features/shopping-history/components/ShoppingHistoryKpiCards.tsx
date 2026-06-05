@@ -11,15 +11,15 @@ export function ShoppingHistoryKpiCards({
 }: ShoppingHistoryKpiCardsProps): React.ReactElement {
 	const cards = [
 		{
-			label: "Average Ticket Cost",
+			label: "Ticket promedio",
 			value: formattedMetrics.averageTicketCostLabel,
 		},
 		{
-			label: "Total Spent to Date",
+			label: "Total gastado",
 			value: formattedMetrics.totalSpentToDateLabel,
 		},
 		{
-			label: "Most Frequent Grocery Day",
+			label: "Día de compra más frecuente",
 			value: formattedMetrics.mostFrequentGroceryDayLabel,
 		},
 	];

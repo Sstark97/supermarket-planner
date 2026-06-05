@@ -39,7 +39,7 @@ export function ShoppingHistoryViewTabs({
 						: "text-slate-600 hover:text-slate-800"
 				}`}
 			>
-				Insights
+				Analítica
 			</button>
 		</div>
 	);

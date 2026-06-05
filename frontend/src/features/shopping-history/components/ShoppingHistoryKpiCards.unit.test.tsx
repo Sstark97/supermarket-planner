@@ -15,9 +15,9 @@ describe("ShoppingHistoryKpiCards", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Average Ticket Cost")).toBeTruthy();
-		expect(screen.getByText("Total Spent to Date")).toBeTruthy();
-		expect(screen.getByText("Most Frequent Grocery Day")).toBeTruthy();
+		expect(screen.getByText("Ticket promedio")).toBeTruthy();
+		expect(screen.getByText("Total gastado")).toBeTruthy();
+		expect(screen.getByText("Día de compra más frecuente")).toBeTruthy();
 		expect(screen.getByText("20,00 €")).toBeTruthy();
 		expect(screen.getByText("400,00 €")).toBeTruthy();
 		expect(screen.getByText("Sábado")).toBeTruthy();
