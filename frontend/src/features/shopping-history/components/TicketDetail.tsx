@@ -2,21 +2,23 @@
 
 import { ChevronLeft } from "lucide-react";
 import type { ShoppingSessionHistoryEntry } from "@/lib/http/ShoppingSessionGateway";
-import {
-	buildSupermarketBreakdown,
-	formatDateTime,
-} from "@/features/shopping-history/model/utils";
+import { ShoppingHistoryDateFormatter } from "@/features/shopping-history/model/ShoppingHistoryDateFormatter";
+import { ShoppingHistoryBreakdownCalculator } from "@/features/shopping-history/model/ShoppingHistoryBreakdownCalculator";
 
 interface TicketDetailProps {
 	entry: ShoppingSessionHistoryEntry | null;
 	onBackToList?: () => void;
 	isMobile: boolean;
+	dateFormatter: ShoppingHistoryDateFormatter;
+	breakdownCalculator: ShoppingHistoryBreakdownCalculator;
 }
 
 export function TicketDetail({
 	entry,
 	onBackToList,
 	isMobile,
+	dateFormatter,
+	breakdownCalculator,
 }: TicketDetailProps): React.ReactElement {
 	if (!entry) {
 		return (
@@ -28,7 +30,8 @@ export function TicketDetail({
 		);
 	}
 
-	const supermarketBreakdown = buildSupermarketBreakdown(entry);
+	const supermarketBreakdown =
+		breakdownCalculator.buildSupermarketBreakdown(entry);
 
 	return (
 		<section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-6">
@@ -50,10 +53,11 @@ export function TicketDetail({
 						Detalle de compra
 					</h2>
 					<p className="text-sm text-slate-600">
-						Fecha compra: {formatDateTime(entry.shoppedAt)}
+						Fecha compra:{" "}
+						{dateFormatter.formatCalendarDateTime(entry.shoppedAt)}
 					</p>
 					<p className="text-sm text-slate-600">
-						Guardado: {formatDateTime(entry.createdAt)}
+						Guardado: {dateFormatter.formatCalendarDateTime(entry.createdAt)}
 					</p>
 				</div>
 				<div className="text-right">

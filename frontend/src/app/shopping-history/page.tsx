@@ -3,9 +3,23 @@
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { History, ShoppingBasket } from "lucide-react";
+import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
 import { TimelinePanel } from "@/features/shopping-history/components/TimelinePanel";
 import { TicketDetail } from "@/features/shopping-history/components/TicketDetail";
 import { useShoppingHistoryState } from "@/features/shopping-history/hooks/useShoppingHistoryState";
+import { ShoppingHistoryDateFormatter } from "@/features/shopping-history/model/ShoppingHistoryDateFormatter";
+import { ShoppingHistoryTimelineGrouper } from "@/features/shopping-history/model/ShoppingHistoryTimelineGrouper";
+import { ShoppingHistoryEntryFilter } from "@/features/shopping-history/model/ShoppingHistoryEntryFilter";
+import { ShoppingHistoryBreakdownCalculator } from "@/features/shopping-history/model/ShoppingHistoryBreakdownCalculator";
+import { ShoppingHistoryAccordionStateProjector } from "@/features/shopping-history/model/ShoppingHistoryAccordionStateProjector";
+
+const shoppingSessionGateway =
+	new ClientContainerDI().resolveShoppingSessionGateway();
+const dateFormatter = new ShoppingHistoryDateFormatter();
+const timelineGrouper = new ShoppingHistoryTimelineGrouper(dateFormatter);
+const entryFilter = new ShoppingHistoryEntryFilter();
+const breakdownCalculator = new ShoppingHistoryBreakdownCalculator();
+const accordionStateProjector = new ShoppingHistoryAccordionStateProjector();
 
 export default function ShoppingHistoryPage(): React.ReactElement {
 	const { data: session, status } = useSession();
@@ -29,7 +43,12 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 		handleSelectSession,
 		setSelectedSessionId,
 		setMobileViewMode,
-	} = useShoppingHistoryState(status);
+	} = useShoppingHistoryState(status, {
+		shoppingSessionGateway,
+		entryFilter,
+		timelineGrouper,
+		accordionStateProjector,
+	});
 
 	if (status === "loading" || isLoading) {
 		return (
@@ -111,8 +130,15 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 							onToggleYear={handleToggleYear}
 							openMonthKeys={openMonthKeys}
 							onToggleMonth={handleToggleMonth}
+							dateFormatter={dateFormatter}
+							breakdownCalculator={breakdownCalculator}
 						/>
-						<TicketDetail entry={selectedEntry} isMobile={false} />
+						<TicketDetail
+							entry={selectedEntry}
+							isMobile={false}
+							dateFormatter={dateFormatter}
+							breakdownCalculator={breakdownCalculator}
+						/>
 					</div>
 
 					<div className="md:hidden">
@@ -131,6 +157,8 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 									onToggleYear={handleToggleYear}
 									openMonthKeys={openMonthKeys}
 									onToggleMonth={handleToggleMonth}
+									dateFormatter={dateFormatter}
+									breakdownCalculator={breakdownCalculator}
 								/>
 							</div>
 						) : (
@@ -139,6 +167,8 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 									entry={selectedEntry}
 									isMobile
 									onBackToList={() => setMobileViewMode("list")}
+									dateFormatter={dateFormatter}
+									breakdownCalculator={breakdownCalculator}
 								/>
 							</div>
 						)}
