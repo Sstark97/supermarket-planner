@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { SearchBar } from "./SearchBar";
-import { CartButton } from "./CartButton";
-import { ProductPageCategoriesToggleButton } from "./ProductPageCategoriesToggleButton";
+import { SearchBar } from "@/features/product-search/components/SearchBar";
+import { CartButton } from "@/features/cart/components/CartButton";
+import { ProductPageCategoriesToggleButton } from "@/features/product-search/components/ProductPageCategoriesToggleButton";
 import { LoginButton } from "./LoginButton";
 import { History, ShoppingBasket } from "lucide-react";
 

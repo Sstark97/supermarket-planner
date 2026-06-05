@@ -2,7 +2,7 @@ import { ProductSearchApiResponseMapper } from "@/features/product-search/api/Pr
 import { ProductSearchApiUrlPolicy } from "@/features/product-search/api/ProductSearchApiUrlPolicy";
 import { ProductSearchCachePolicy } from "@/features/product-search/api/ProductSearchCachePolicy";
 import { ProductSearchRequestBuilder } from "@/features/product-search/api/ProductSearchRequestBuilder";
-import { ProductSearchFiltersMapper } from "@/features/product-search/filters";
+import { ProductSearchFiltersMapper } from "@/features/product-search/model/filters";
 import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {

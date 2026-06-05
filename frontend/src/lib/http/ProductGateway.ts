@@ -1,4 +1,4 @@
-import { ProductSearchFilters } from "@/features/product-search/filters";
+import { ProductSearchFilters } from "@/features/product-search/model/filters";
 import { IProduct } from "@/types";
 
 export interface ProductGateway {

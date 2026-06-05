@@ -14,12 +14,12 @@ import {
 import { useSession, signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { useCartUiStore } from "@/store/cartUiStore";
-import { SupermarketBadge } from "./SupermarketBadge";
-import { SaveShoppingModal } from "./SaveShoppingModal";
-import { useToast } from "./Toast";
+import { SupermarketBadge } from "@/components/SupermarketBadge";
+import { SaveShoppingModal } from "@/features/cart/components/SaveShoppingModal";
+import { useToast } from "@/components/Toast";
 import { getAuthToken } from "@/lib/auth/getAuthToken";
 import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
-import { CartItemMapper } from "@/features/shopping-history/CartItemMapper";
+import { CartItemToSessionItemMapper } from "@/features/cart/mappers/CartItemToSessionItemMapper";
 
 const shoppingSessionGateway =
 	new ClientContainerDI().resolveShoppingSessionGateway();
@@ -60,7 +60,7 @@ export function CartSidebar(): React.ReactElement | null {
 		setIsSaving(true);
 		try {
 			const token = await getAuthToken();
-			const sessionItems = CartItemMapper.toSessionItems(items);
+			const sessionItems = CartItemToSessionItemMapper.toSessionItems(items);
 			await shoppingSessionGateway.save(
 				{ shoppedAt, items: sessionItems },
 				token,

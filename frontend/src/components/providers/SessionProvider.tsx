@@ -1,22 +1,24 @@
 "use client";
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
-import { useCartSessionSync } from "@/hooks/useCartSessionSync";
+import { useCartSessionSync } from "@/features/cart/hooks/useCartSessionSync";
 
 interface SessionProviderProps {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }
 
 function CartSessionSync(): null {
-  useCartSessionSync();
-  return null;
+	useCartSessionSync();
+	return null;
 }
 
-export function SessionProvider({ children }: SessionProviderProps): React.ReactElement {
-  return (
-    <NextAuthSessionProvider>
-      <CartSessionSync />
-      {children}
-    </NextAuthSessionProvider>
-  );
+export function SessionProvider({
+	children,
+}: SessionProviderProps): React.ReactElement {
+	return (
+		<NextAuthSessionProvider>
+			<CartSessionSync />
+			{children}
+		</NextAuthSessionProvider>
+	);
 }

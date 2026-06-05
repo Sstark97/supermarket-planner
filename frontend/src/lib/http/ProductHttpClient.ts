@@ -1,7 +1,7 @@
 import {
 	ProductSearchFilters,
 	ProductSearchFiltersMapper,
-} from "@/features/product-search/filters";
+} from "@/features/product-search/model/filters";
 import { IProduct } from "@/types";
 import { ProductGateway } from "./ProductGateway";
 
