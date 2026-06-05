@@ -104,8 +104,8 @@ Rollback boundary (PR 2): revert metrics gateway + metrics hook/model classes on
 ### PR 3 — Insights UI (charts + KPI cards + tab integration)
 
 #### 7) RED — UI component tests
-- [ ] Install chart library in frontend (`recharts`).
-- [ ] Add failing component tests:
+- [x] Install chart library in frontend (`recharts`).
+- [x] Add failing component tests:
   - `frontend/src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx`
   - `frontend/src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx`
   - `frontend/src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx`
@@ -114,7 +114,7 @@ Rollback boundary (PR 2): revert metrics gateway + metrics hook/model classes on
 - `cd frontend && npm run test -- src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx`
 
 #### 8) GREEN — implement analytics UI and page wiring
-- [ ] Add components:
+- [x] Add components:
   - `frontend/src/features/shopping-history/components/ShoppingHistoryViewTabs.tsx`
   - `frontend/src/features/shopping-history/components/ShoppingHistoryInsightsPanel.tsx`
   - `frontend/src/features/shopping-history/components/ShoppingHistoryKpiCards.tsx`
@@ -122,17 +122,17 @@ Rollback boundary (PR 2): revert metrics gateway + metrics hook/model classes on
   - `frontend/src/features/shopping-history/components/SpendingTrendChart.tsx`
   - `frontend/src/features/shopping-history/components/TrendAggregationSelector.tsx`
   - `frontend/src/features/shopping-history/components/ShoppingHistoryMetricsEmptyState.tsx`
-- [ ] Integrate tabs + metrics hook in `frontend/src/app/shopping-history/page.tsx` while preserving history mode behavior.
-- [ ] Ensure mobile and desktop states continue to work when switching between History and Insights views.
+- [x] Integrate tabs + metrics hook in `frontend/src/app/shopping-history/page.tsx` while preserving history mode behavior.
+- [x] Ensure mobile and desktop states continue to work when switching between History and Insights views.
 
 **Verification (GREEN)**
 - `cd frontend && npm run build`
 - `cd frontend && npm run test -- src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx`
 
 #### 9) REFACTOR — UI semantics and error/empty behavior polish
-- [ ] Ensure semantic labels and accessible tab/button text for RTL queries.
-- [ ] Confirm empty-state copy for no metrics and non-destructive error state for fetch failures.
-- [ ] Keep page composition root responsible for dependency construction (`new`), not leaf components.
+- [x] Ensure semantic labels and accessible tab/button text for RTL queries.
+- [x] Confirm empty-state copy for no metrics and non-destructive error state for fetch failures.
+- [x] Keep page composition root responsible for dependency construction (`new`), not leaf components.
 
 **Verification (REFACTOR)**
 - `cd frontend && npm run build`
