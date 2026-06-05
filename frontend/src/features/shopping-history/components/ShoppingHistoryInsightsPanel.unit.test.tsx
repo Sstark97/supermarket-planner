@@ -44,7 +44,7 @@ describe("ShoppingHistoryInsightsPanel", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Average Ticket Cost")).toBeTruthy();
+		expect(screen.getByText("Ticket promedio")).toBeTruthy();
 		expect(screen.getByText("Dominio por supermercado")).toBeTruthy();
 		expect(screen.getByText("Tendencia de gasto")).toBeTruthy();
 	});
@@ -74,7 +74,7 @@ describe("ShoppingHistoryInsightsPanel", () => {
 
 		expect(
 			screen.getByText(
-				"Todavía no hay suficientes datos para mostrar insights.",
+				"Todavía no hay suficientes datos para mostrar la analítica.",
 			),
 		).toBeTruthy();
 
