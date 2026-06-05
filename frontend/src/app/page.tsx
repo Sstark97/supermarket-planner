@@ -1,8 +1,11 @@
 import { Suspense } from "react";
-import { CategoryFilterBar } from "@/components/CategoryFilterBar";
-import { FilterMenu } from "@/components/FilterMenu";
-import { ProductGrid, ProductGridSkeleton } from "@/components/ProductGrid";
-import { ProductSearchFiltersMapper } from "@/features/product-search/filters";
+import { CategoryFilterBar } from "@/features/product-search/components/CategoryFilterBar";
+import { FilterMenu } from "@/features/product-search/components/FilterMenu";
+import {
+	ProductGrid,
+	ProductGridSkeleton,
+} from "@/features/product-search/components/ProductGrid";
+import { ProductSearchFiltersMapper } from "@/features/product-search/model/filters";
 import { createServerContainer } from "@/lib/di/ContainerDI";
 
 export default async function Home({

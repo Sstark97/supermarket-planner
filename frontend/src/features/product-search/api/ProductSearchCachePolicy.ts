@@ -1,4 +1,4 @@
-import { ProductSearchFilters } from "../filters";
+import { ProductSearchFilters } from "../model/filters";
 
 export class ProductSearchCachePolicy {
 	for(
