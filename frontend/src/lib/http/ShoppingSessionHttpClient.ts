@@ -1,4 +1,5 @@
 import type {
+	DeleteShoppingSessionResponse,
 	ListShoppingSessionsResponse,
 	SaveShoppingSessionRequest,
 	SaveShoppingSessionResponse,
@@ -10,6 +11,10 @@ type SaveShoppingSessionApiResponse = SaveShoppingSessionResponse & {
 };
 
 type ListShoppingSessionsApiResponse = ListShoppingSessionsResponse & {
+	error?: string;
+};
+
+type DeleteShoppingSessionApiResponse = DeleteShoppingSessionResponse & {
 	error?: string;
 };
 
@@ -54,6 +59,30 @@ export class ShoppingSessionHttpClient implements ShoppingSessionGateway {
 		});
 
 		const json = (await res.json()) as ListShoppingSessionsApiResponse;
+
+		if (!res.ok) {
+			throw new Error(
+				`Shopping session API error ${res.status}: ${json.error ?? "Unknown error"}`,
+			);
+		}
+
+		return json;
+	}
+
+	async delete(
+		sessionId: string,
+		token: string,
+	): Promise<DeleteShoppingSessionResponse> {
+		const url = `${this.baseUrl}/api/shopping-sessions/${sessionId}`;
+
+		const res = await fetch(url, {
+			method: "DELETE",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		const json = (await res.json()) as DeleteShoppingSessionApiResponse;
 
 		if (!res.ok) {
 			throw new Error(

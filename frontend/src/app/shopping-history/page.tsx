@@ -6,12 +6,14 @@ import { History, ShoppingBasket } from "lucide-react";
 import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
 import { TimelinePanel } from "@/features/shopping-history/components/TimelinePanel";
 import { TicketDetail } from "@/features/shopping-history/components/TicketDetail";
+import { DeleteShoppingSessionConfirmationDialog } from "@/features/shopping-history/components/DeleteShoppingSessionConfirmationDialog";
 import { useShoppingHistoryState } from "@/features/shopping-history/hooks/useShoppingHistoryState";
 import { ShoppingHistoryDateFormatter } from "@/features/shopping-history/model/ShoppingHistoryDateFormatter";
 import { ShoppingHistoryTimelineGrouper } from "@/features/shopping-history/model/ShoppingHistoryTimelineGrouper";
 import { ShoppingHistoryEntryFilter } from "@/features/shopping-history/model/ShoppingHistoryEntryFilter";
 import { ShoppingHistoryBreakdownCalculator } from "@/features/shopping-history/model/ShoppingHistoryBreakdownCalculator";
 import { ShoppingHistoryAccordionStateProjector } from "@/features/shopping-history/model/ShoppingHistoryAccordionStateProjector";
+import { ShoppingHistoryDeleteCoordinator } from "@/features/shopping-history/model/ShoppingHistoryDeleteCoordinator";
 
 const shoppingSessionGateway =
 	new ClientContainerDI().resolveShoppingSessionGateway();
@@ -20,6 +22,7 @@ const timelineGrouper = new ShoppingHistoryTimelineGrouper(dateFormatter);
 const entryFilter = new ShoppingHistoryEntryFilter();
 const breakdownCalculator = new ShoppingHistoryBreakdownCalculator();
 const accordionStateProjector = new ShoppingHistoryAccordionStateProjector();
+const deleteCoordinator = new ShoppingHistoryDeleteCoordinator(shoppingSessionGateway);
 
 export default function ShoppingHistoryPage(): React.ReactElement {
 	const { data: session, status } = useSession();
@@ -43,11 +46,17 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 		handleSelectSession,
 		setSelectedSessionId,
 		setMobileViewMode,
+		isDeleteDialogOpen,
+		isDeletingSession,
+		openDeleteConfirmation,
+		closeDeleteConfirmation,
+		confirmDeleteSession,
 	} = useShoppingHistoryState(status, {
 		shoppingSessionGateway,
 		entryFilter,
 		timelineGrouper,
 		accordionStateProjector,
+		deleteCoordinator,
 	});
 
 	if (status === "loading" || isLoading) {
@@ -138,6 +147,7 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 							isMobile={false}
 							dateFormatter={dateFormatter}
 							breakdownCalculator={breakdownCalculator}
+							onDeleteRequest={openDeleteConfirmation}
 						/>
 					</div>
 
@@ -169,12 +179,21 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 									onBackToList={() => setMobileViewMode("list")}
 									dateFormatter={dateFormatter}
 									breakdownCalculator={breakdownCalculator}
+									onDeleteRequest={openDeleteConfirmation}
 								/>
 							</div>
 						)}
 					</div>
 				</>
 			)}
+			<DeleteShoppingSessionConfirmationDialog
+				isOpen={isDeleteDialogOpen}
+				isDeleting={isDeletingSession}
+				onCancel={closeDeleteConfirmation}
+				onConfirm={() => {
+					void confirmDeleteSession();
+				}}
+			/>
 		</div>
 	);
 }

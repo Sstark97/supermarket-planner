@@ -45,6 +45,10 @@ export interface ListShoppingSessionsResponse {
 	sessions: ShoppingSessionHistoryEntry[];
 }
 
+export interface DeleteShoppingSessionResponse {
+	deleted: boolean;
+}
+
 export interface ShoppingSessionGateway {
 	save(
 		request: SaveShoppingSessionRequest,
@@ -52,4 +56,9 @@ export interface ShoppingSessionGateway {
 	): Promise<SaveShoppingSessionResponse>;
 
 	list(token: string): Promise<ListShoppingSessionsResponse>;
+
+	delete(
+		sessionId: string,
+		token: string,
+	): Promise<DeleteShoppingSessionResponse>;
 }
