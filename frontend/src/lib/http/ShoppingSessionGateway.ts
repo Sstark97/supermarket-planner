@@ -49,6 +49,36 @@ export interface DeleteShoppingSessionResponse {
 	deleted: boolean;
 }
 
+export interface ShoppingSessionSupermarketDominanceMetric {
+	supermarket: string;
+	totalSpent: number;
+	totalItems: number;
+}
+
+export interface ShoppingSessionTrendPoint {
+	period: string;
+	amount: number;
+}
+
+export interface ShoppingSessionSpendingTrends {
+	weeklyAverage: ShoppingSessionTrendPoint[];
+	monthlyTotal: ShoppingSessionTrendPoint[];
+	yearlyTotal: ShoppingSessionTrendPoint[];
+}
+
+export interface ShoppingSessionTicketMetrics {
+	averageTicketCost: number;
+	totalSpentToDate: number;
+	mostFrequentGroceryDay: string | null;
+	totalTickets: number;
+}
+
+export interface GetShoppingSessionMetricsResponse {
+	supermarketDominance: ShoppingSessionSupermarketDominanceMetric[];
+	spendingTrends: ShoppingSessionSpendingTrends;
+	ticketMetrics: ShoppingSessionTicketMetrics;
+}
+
 export interface ShoppingSessionGateway {
 	save(
 		request: SaveShoppingSessionRequest,
@@ -61,4 +91,6 @@ export interface ShoppingSessionGateway {
 		sessionId: string,
 		token: string,
 	): Promise<DeleteShoppingSessionResponse>;
+
+	getMetrics(token: string): Promise<GetShoppingSessionMetricsResponse>;
 }
