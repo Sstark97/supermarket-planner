@@ -9,11 +9,11 @@
 | Chained PRs recommended | Yes |
 | Suggested split | PR 1 (backend metrics API) → PR 2 (frontend metrics gateway + model/hook) → PR 3 (analytics UI + tests) |
 | Delivery strategy | ask-on-risk |
-| Chain strategy | pending |
+| Chain strategy | stacked-to-main |
 
 Decision needed before apply: Yes
 Chained PRs recommended: Yes
-Chain strategy: pending
+Chain strategy: stacked-to-main
 400-line budget risk: High
 
 ## Dependency-Ordered Implementation Tasks
@@ -67,8 +67,8 @@ Rollback boundary (PR 1): revert metrics port/use-case/controller/repository add
 ### PR 2 — Frontend metrics gateway + state/model (class-first)
 
 #### 4) RED — frontend contracts and hook tests
-- [ ] Extend `frontend/src/lib/http/ShoppingSessionGateway.ts` with metrics response contract and `getMetrics(token)` method.
-- [ ] Add failing hook tests: `frontend/src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx` for:
+- [x] Extend `frontend/src/lib/http/ShoppingSessionGateway.ts` with metrics response contract and `getMetrics(token)` method.
+- [x] Add failing hook tests: `frontend/src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx` for:
   - no fetch before insights view active
   - fetch on insights activation + authenticated status
   - error state on gateway failure
@@ -77,22 +77,22 @@ Rollback boundary (PR 1): revert metrics port/use-case/controller/repository add
 - `cd frontend && npm run test -- src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx`
 
 #### 5) GREEN — implement gateway + model classes + hook
-- [ ] Implement `getMetrics` in `frontend/src/lib/http/ShoppingSessionHttpClient.ts` against `GET /api/shopping-sessions/metrics`.
-- [ ] Add class-first model contracts and mappers:
+- [x] Implement `getMetrics` in `frontend/src/lib/http/ShoppingSessionHttpClient.ts` against `GET /api/shopping-sessions/metrics`.
+- [x] Add class-first model contracts and mappers:
   - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsContracts.ts`
   - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.ts`
   - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.ts`
-- [ ] Add hook: `frontend/src/features/shopping-history/hooks/useShoppingHistoryMetrics.ts`.
+- [x] Add hook: `frontend/src/features/shopping-history/hooks/useShoppingHistoryMetrics.ts`.
 
 **Verification (GREEN)**
 - `cd frontend && npm run build`
 - `cd frontend && npm run test -- src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx`
 
 #### 6) REFACTOR — mapper/formatter tests and naming cleanup
-- [ ] Add model unit tests:
+- [x] Add model unit tests:
   - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.unit.test.ts`
   - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.unit.test.ts`
-- [ ] Ensure no exported generic `utils` module is introduced.
+- [x] Ensure no exported generic `utils` module is introduced.
 
 **Verification (REFACTOR)**
 - `cd frontend && npm run test -- src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.unit.test.ts src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.unit.test.ts`
@@ -147,7 +147,7 @@ Rollback boundary (PR 3): revert only insights-tab/chart components and page wir
 - [x] Backend compiles and targeted unit tests pass:
   - `cd backend && npm run build`
   - `cd backend && npm run test:unit -- src/application/use-cases/shopping-session/GetShoppingSessionMetricsUseCase.unit.test.ts src/infrastructure/adapters/driving/http/ShoppingSessionController.unit.test.ts`
-- [ ] Frontend compiles and targeted metrics tests pass:
+- [x] Frontend compiles and targeted metrics tests pass:
   - `cd frontend && npm run build`
   - `cd frontend && npm run test -- src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.unit.test.ts src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.unit.test.ts src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx`
 - [ ] Manual sanity checks:
