@@ -1,33 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ShoppingSessionHistoryEntry } from "@/lib/http/ShoppingSessionGateway";
-import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
-import { getAuthToken } from "@/lib/auth/getAuthToken";
-import type {
-	ViewMode,
-	YearGroup,
-} from "@/features/shopping-history/model/types";
+import type { ShoppingSessionGateway } from "@/lib/http/ShoppingSessionGateway";
+import type { YearGroup } from "@/features/shopping-history/model/ShoppingHistoryContracts";
+import { ShoppingHistoryEntryFilter } from "@/features/shopping-history/model/ShoppingHistoryEntryFilter";
+import { ShoppingHistoryTimelineGrouper } from "@/features/shopping-history/model/ShoppingHistoryTimelineGrouper";
+import { ShoppingHistoryAccordionStateProjector } from "@/features/shopping-history/model/ShoppingHistoryAccordionStateProjector";
+import { useShoppingHistoryEntries } from "./useShoppingHistoryEntries";
+import { useShoppingHistoryFilters } from "./useShoppingHistoryFilters";
 import {
-	buildYearMonthGroups,
-	filterShoppingEntries,
-	getSupermarketOptions,
-	haveSameKeys,
-} from "@/features/shopping-history/model/utils";
+	useShoppingHistorySelection,
+	type ShoppingHistorySelectionState,
+} from "./useShoppingHistorySelection";
+import { useShoppingHistoryAccordion } from "./useShoppingHistoryAccordion";
 
-const shoppingSessionGateway =
-	new ClientContainerDI().resolveShoppingSessionGateway();
+interface ShoppingHistoryStateDependencies {
+	shoppingSessionGateway: ShoppingSessionGateway;
+	entryFilter: ShoppingHistoryEntryFilter;
+	timelineGrouper: ShoppingHistoryTimelineGrouper;
+	accordionStateProjector: ShoppingHistoryAccordionStateProjector;
+}
 
 interface ShoppingHistoryState {
-	entries: ShoppingSessionHistoryEntry[];
-	filteredEntries: ShoppingSessionHistoryEntry[];
+	filteredEntries: ReturnType<
+		typeof useShoppingHistoryFilters
+	>["filteredEntries"];
 	groupedEntries: YearGroup[];
 	supermarketOptions: string[];
 	selectedSessionId: string | null;
-	selectedEntry: ShoppingSessionHistoryEntry | null;
+	selectedEntry: ShoppingHistorySelectionState["selectedEntry"];
 	isLoading: boolean;
 	errorMessage: string | null;
-	mobileViewMode: ViewMode;
+	mobileViewMode: ShoppingHistorySelectionState["mobileViewMode"];
 	searchTerm: string;
 	supermarketFilter: string;
 	openYearKeys: string[];
@@ -38,147 +41,48 @@ interface ShoppingHistoryState {
 	handleToggleMonth: (monthKey: string) => void;
 	handleSelectSession: (sessionId: string) => void;
 	setSelectedSessionId: (sessionId: string | null) => void;
-	setMobileViewMode: (mode: ViewMode) => void;
+	setMobileViewMode: ShoppingHistorySelectionState["setMobileViewMode"];
 }
 
-export function useShoppingHistoryState(status: string): ShoppingHistoryState {
-	const [entries, setEntries] = useState<ShoppingSessionHistoryEntry[]>([]);
-	const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
-		null,
+export function useShoppingHistoryState(
+	status: string,
+	dependencies: ShoppingHistoryStateDependencies,
+): ShoppingHistoryState {
+	const {
+		shoppingSessionGateway,
+		entryFilter,
+		timelineGrouper,
+		accordionStateProjector,
+	} = dependencies;
+
+	const { entries, isLoading, errorMessage } = useShoppingHistoryEntries(
+		status,
+		shoppingSessionGateway,
 	);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [mobileViewMode, setMobileViewMode] = useState<ViewMode>("list");
-	const [searchTerm, setSearchTerm] = useState<string>("");
-	const [supermarketFilter, setSupermarketFilter] = useState<string>("all");
-	const [openYearKeys, setOpenYearKeys] = useState<string[]>([]);
-	const [openMonthKeys, setOpenMonthKeys] = useState<string[]>([]);
-	const [hasInitializedAccordions, setHasInitializedAccordions] =
-		useState<boolean>(false);
 
-	useEffect(() => {
-		if (status !== "authenticated") {
-			setIsLoading(false);
-			return;
-		}
-
-		let isCancelled = false;
-
-		const load = async (): Promise<void> => {
-			setIsLoading(true);
-			setErrorMessage(null);
-			try {
-				const token = await getAuthToken();
-				const response = await shoppingSessionGateway.list(token);
-				if (isCancelled) return;
-
-				setEntries(response.sessions);
-				setSelectedSessionId(
-					response.sessions.length > 0 ? response.sessions[0].sessionId : null,
-				);
-			} catch {
-				if (!isCancelled) {
-					setErrorMessage("No se pudo cargar el historial de compras.");
-				}
-			} finally {
-				if (!isCancelled) {
-					setIsLoading(false);
-				}
-			}
-		};
-
-		void load();
-
-		return () => {
-			isCancelled = true;
-		};
-	}, [status]);
-
-	const normalizedSearch = searchTerm.trim().toLowerCase();
-	const filteredEntries = filterShoppingEntries(
-		entries,
-		normalizedSearch,
-		supermarketFilter,
-	);
-	const groupedEntries = buildYearMonthGroups(filteredEntries);
-	const supermarketOptions = getSupermarketOptions(entries);
-	const selectedEntry =
-		filteredEntries.find((entry) => entry.sessionId === selectedSessionId) ??
-		null;
-
-	useEffect(() => {
-		if (filteredEntries.length === 0) {
-			setSelectedSessionId(null);
-			setMobileViewMode("list");
-			return;
-		}
-
-		const exists = filteredEntries.some(
-			(entry) => entry.sessionId === selectedSessionId,
-		);
-
-		if (!exists) {
-			setSelectedSessionId(filteredEntries[0].sessionId);
-		}
-	}, [filteredEntries, selectedSessionId]);
-
-	useEffect(() => {
-		const availableYearKeys = groupedEntries.map((group) => group.yearKey);
-		const availableMonthKeys = groupedEntries.flatMap((group) =>
-			group.months.map((month) => month.monthKey),
-		);
-
-		setOpenYearKeys((prev) => {
-			const pruned = prev.filter((key) => availableYearKeys.includes(key));
-			return haveSameKeys(prev, pruned) ? prev : pruned;
-		});
-		setOpenMonthKeys((prev) => {
-			const pruned = prev.filter((key) => availableMonthKeys.includes(key));
-			return haveSameKeys(prev, pruned) ? prev : pruned;
-		});
-	}, [entries, searchTerm, supermarketFilter, groupedEntries]);
-
-	useEffect(() => {
-		if (hasInitializedAccordions || groupedEntries.length === 0) {
-			return;
-		}
-
-		setOpenYearKeys([groupedEntries[0].yearKey]);
-		setOpenMonthKeys(groupedEntries[0].months.map((month) => month.monthKey));
-		setHasInitializedAccordions(true);
-	}, [
-		entries,
+	const {
 		searchTerm,
 		supermarketFilter,
-		hasInitializedAccordions,
+		setSearchTerm,
+		setSupermarketFilter,
+		filteredEntries,
 		groupedEntries,
-	]);
+		supermarketOptions,
+	} = useShoppingHistoryFilters(entries, entryFilter, timelineGrouper);
 
-	function handleToggleYear(yearKey: string): void {
-		setHasInitializedAccordions(true);
-		setOpenYearKeys((prev) =>
-			prev.includes(yearKey)
-				? prev.filter((key) => key !== yearKey)
-				: [...prev, yearKey],
-		);
-	}
+	const {
+		selectedSessionId,
+		selectedEntry,
+		mobileViewMode,
+		handleSelectSession,
+		setSelectedSessionId,
+		setMobileViewMode,
+	} = useShoppingHistorySelection(filteredEntries);
 
-	function handleToggleMonth(monthKey: string): void {
-		setHasInitializedAccordions(true);
-		setOpenMonthKeys((prev) =>
-			prev.includes(monthKey)
-				? prev.filter((key) => key !== monthKey)
-				: [...prev, monthKey],
-		);
-	}
-
-	function handleSelectSession(sessionId: string): void {
-		setSelectedSessionId(sessionId);
-		setMobileViewMode("detail");
-	}
+	const { openYearKeys, openMonthKeys, handleToggleYear, handleToggleMonth } =
+		useShoppingHistoryAccordion(groupedEntries, accordionStateProjector);
 
 	return {
-		entries,
 		filteredEntries,
 		groupedEntries,
 		supermarketOptions,
