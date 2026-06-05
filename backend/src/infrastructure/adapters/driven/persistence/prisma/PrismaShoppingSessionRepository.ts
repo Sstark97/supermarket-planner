@@ -74,9 +74,9 @@ export class PrismaShoppingSessionRepository
 					GROUP BY si."supermarket"
 					ORDER BY "totalSpent" DESC
 				`,
-			this.fetchTrendRows(userId, "week", "YYYY-MM-DD", true),
-			this.fetchTrendRows(userId, "month", "YYYY-MM", false),
-			this.fetchTrendRows(userId, "year", "YYYY", false),
+			this.fetchTrendRows(userId, "week"),
+			this.fetchTrendRows(userId, "month"),
+			this.fetchTrendRows(userId, "year"),
 			prisma.$queryRaw<Array<{ dayOfWeek: number; totalTickets: bigint }>>`
 					SELECT
 						EXTRACT(DOW FROM ss."shoppedAt")::int AS "dayOfWeek",
@@ -117,30 +117,39 @@ export class PrismaShoppingSessionRepository
 	private async fetchTrendRows(
 		userId: string,
 		bucket: "week" | "month" | "year",
-		format: "YYYY-MM-DD" | "YYYY-MM" | "YYYY",
-		useAverage: boolean,
 	): Promise<ShoppingSessionTrendPointSnapshot[]> {
-		const operation = useAverage
-			? prisma.$queryRaw<Array<{ period: string; amount: number }>>`
-				SELECT
-					TO_CHAR(DATE_TRUNC(${bucket}, ss."shoppedAt"), ${format}) AS "period",
-					COALESCE(AVG(ss."totalPrice"), 0)::double precision AS "amount"
-				FROM "ShoppingSession" ss
-				WHERE ss."userId" = ${userId}
-				GROUP BY DATE_TRUNC(${bucket}, ss."shoppedAt")
-				ORDER BY DATE_TRUNC(${bucket}, ss."shoppedAt") ASC
-			`
-			: prisma.$queryRaw<Array<{ period: string; amount: number }>>`
-				SELECT
-					TO_CHAR(DATE_TRUNC(${bucket}, ss."shoppedAt"), ${format}) AS "period",
-					COALESCE(SUM(ss."totalPrice"), 0)::double precision AS "amount"
-				FROM "ShoppingSession" ss
-				WHERE ss."userId" = ${userId}
-				GROUP BY DATE_TRUNC(${bucket}, ss."shoppedAt")
-				ORDER BY DATE_TRUNC(${bucket}, ss."shoppedAt") ASC
-			`;
-
-		return operation;
+		switch (bucket) {
+			case "week":
+				return prisma.$queryRaw<Array<{ period: string; amount: number }>>`
+					SELECT
+						TO_CHAR(DATE_TRUNC('week', ss."shoppedAt"), 'YYYY-MM-DD') AS "period",
+						COALESCE(AVG(ss."totalPrice"), 0)::double precision AS "amount"
+					FROM "ShoppingSession" ss
+					WHERE ss."userId" = ${userId}
+					GROUP BY DATE_TRUNC('week', ss."shoppedAt")
+					ORDER BY DATE_TRUNC('week', ss."shoppedAt") ASC
+				`;
+			case "month":
+				return prisma.$queryRaw<Array<{ period: string; amount: number }>>`
+					SELECT
+						TO_CHAR(DATE_TRUNC('month', ss."shoppedAt"), 'YYYY-MM') AS "period",
+						COALESCE(SUM(ss."totalPrice"), 0)::double precision AS "amount"
+					FROM "ShoppingSession" ss
+					WHERE ss."userId" = ${userId}
+					GROUP BY DATE_TRUNC('month', ss."shoppedAt")
+					ORDER BY DATE_TRUNC('month', ss."shoppedAt") ASC
+				`;
+			case "year":
+				return prisma.$queryRaw<Array<{ period: string; amount: number }>>`
+					SELECT
+						TO_CHAR(DATE_TRUNC('year', ss."shoppedAt"), 'YYYY') AS "period",
+						COALESCE(SUM(ss."totalPrice"), 0)::double precision AS "amount"
+					FROM "ShoppingSession" ss
+					WHERE ss."userId" = ${userId}
+					GROUP BY DATE_TRUNC('year', ss."shoppedAt")
+					ORDER BY DATE_TRUNC('year', ss."shoppedAt") ASC
+				`;
+		}
 	}
 
 	private mapDayOfWeekToLabel(dayOfWeek: number): string {
