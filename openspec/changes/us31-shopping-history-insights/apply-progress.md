@@ -1,8 +1,8 @@
 # Apply Progress — us31-shopping-history-insights
 
 ## Scope / PR Boundary
-- **Applied slices:** PR1 (backend metrics API) + PR2 (frontend metrics gateway/model/hook).
-- **Out of scope in this apply:** PR3 insights UI/charts/tab integration.
+- **Applied slices:** PR1 (backend metrics API) + PR2 (frontend metrics gateway/model/hook) + PR3 (frontend insights UI/charts/tab integration).
+- **Current workload boundary:** chained PR strategy kept; this apply completed the PR3 slice only on top of existing PR1/PR2 base.
 
 ## Completed Tasks
 
@@ -57,6 +57,22 @@
 - `frontend/src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx`
 - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.unit.test.ts`
 - `frontend/src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.unit.test.ts`
+
+### Frontend (PR3)
+- `frontend/src/app/shopping-history/page.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryViewTabs.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryInsightsPanel.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryKpiCards.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx`
+- `frontend/src/features/shopping-history/components/SupermarketDominanceChart.tsx`
+- `frontend/src/features/shopping-history/components/SpendingTrendChart.tsx`
+- `frontend/src/features/shopping-history/components/TrendAggregationSelector.tsx`
+- `frontend/src/features/shopping-history/components/ShoppingHistoryMetricsEmptyState.tsx`
+- `frontend/src/test/setup.ts`
+- `frontend/package.json`
+- `frontend/pnpm-lock.yaml`
 - `openspec/changes/us31-shopping-history-insights/tasks.md`
 - `openspec/changes/us31-shopping-history-insights/apply-progress.md`
 
@@ -67,6 +83,8 @@
 - `cd frontend && npm run test -- src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx`
 - `cd frontend && npm run test -- src/features/shopping-history/model/ShoppingHistoryMetricsChartMapper.unit.test.ts src/features/shopping-history/model/ShoppingHistoryMetricsFormatter.unit.test.ts`
 - `cd frontend && npx tsc --noEmit -p tsconfig.json`
+- `cd frontend && npm run test -- src/features/shopping-history/components/ShoppingHistoryInsightsPanel.unit.test.tsx src/features/shopping-history/hooks/useShoppingHistoryMetrics.unit.test.tsx`
+- `cd frontend && npm run test -- src/features/shopping-history/components/ShoppingHistoryViewTabs.unit.test.tsx src/features/shopping-history/components/ShoppingHistoryKpiCards.unit.test.tsx`
 
 ## Test Evidence
 - Backend build passed.
@@ -74,25 +92,26 @@
 - Frontend build passed.
 - Frontend targeted hook/model tests passed.
 - Frontend type-check (`npx tsc --noEmit`) passed.
+- PR3 frontend build passed after UI integration.
+- PR3 targeted tests passed for insights panel + metrics hook + tabs + KPI cards.
+- Added `ResizeObserver` test polyfill in shared test setup to support `recharts` in Vitest/JSDOM.
 
 ## Design Notes / Deviations
 - Endpoint naming preserved as required: `GET /api/shopping-sessions/metrics`.
-- PR2 intentionally avoids UI/tab/chart integration; it prepares gateway + model + hook for PR3.
-- Insights model layer implemented with classes (`ChartMapper`, `Formatter`, `ModelAssembler`) to keep transformations explicit and testable.
+- PR2 intentionally avoided UI/tab/chart integration and PR3 consumed that existing layer as designed.
+- Insights model layer remains class-first (`ChartMapper`, `Formatter`, `ModelAssembler`), with dependency construction (`new`) in page composition scope.
+- `recharts` emits zero-size container warnings in JSDOM tests; this is expected in headless layout-less rendering and does not fail tests.
 
 ## Remaining Tasks
-From `tasks.md`, remaining unchecked items (PR3/UI slice):
-- `- [ ] Install chart library in frontend (\`recharts\`).`
-- `- [ ] Add failing component tests:`
-- `- [ ] Add components:`
-- `- [ ] Integrate tabs + metrics hook in \`frontend/src/app/shopping-history/page.tsx\` while preserving history mode behavior.`
-- `- [ ] Ensure mobile and desktop states continue to work when switching between History and Insights views.`
-- `- [ ] Ensure semantic labels and accessible tab/button text for RTL queries.`
-- `- [ ] Confirm empty-state copy for no metrics and non-destructive error state for fetch failures.`
-- `- [ ] Keep page composition root responsible for dependency construction (\`new\`), not leaf components.`
-- `- [ ] Frontend compiles and targeted metrics tests pass:`
+From `tasks.md`, remaining unchecked items:
+- `- [ ] If repository grows too large, extract adapter-private class(es):`
 - `- [ ] Manual sanity checks:`
 
 ## Workload / Delivery
-- Delivery path honored: chained PR strategy.
-- Current implementation corresponds to **PR1 + PR2**, leaving PR3 as focused UI integration work.
+- Delivery path honored: chained PR strategy (`stacked-to-main`).
+- PR boundary for this slice: **PR3 frontend analytics UI only** (no backend changes).
+
+## Structured Status Consumed
+- `applyState`: blocked in inherited status due ambiguous change selection.
+- Action taken: execution proceeded under parent-provided explicit scope for `us31-shopping-history-insights` PR3 slice.
+- `actionContext.mode`: repo-local; `allowedEditRoots` remained within project root and were respected.
