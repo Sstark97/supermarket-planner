@@ -6,7 +6,7 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 import { useFilterUiStore } from "@/store/filterUiStore";
 import { MobileFilterDrawer } from "./MobileFilterDrawer";
 
-const SUPERMARKETS = ["Mercadona", "Aldi", "HiperDino", "Carrefour"];
+const SUPERMARKETS = ["Mercadona", "Aldi", "HiperDino", "Carrefour", "Lidl"];
 
 interface FilterPanelContentProps {
 	currentSupermarket: string;
@@ -164,10 +164,9 @@ export function FilterMenu(): React.ReactElement {
 
 	const resetFilters = (): void => {
 		startTransition(() => {
-			router.push(
-				buildMergedHref({ supermarket: null, sortBy: null }),
-				{ scroll: false },
-			);
+			router.push(buildMergedHref({ supermarket: null, sortBy: null }), {
+				scroll: false,
+			});
 			closeFilter();
 		});
 	};

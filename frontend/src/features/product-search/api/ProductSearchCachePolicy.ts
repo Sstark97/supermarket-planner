@@ -4,7 +4,12 @@ export class ProductSearchCachePolicy {
 	for(
 		filters: ProductSearchFilters,
 	): { cache: "no-store" } | { next: { revalidate: number; tags: string[] } } {
-		if (filters.query) {
+		if (
+			filters.query ||
+			filters.supermarket ||
+			filters.category ||
+			filters.sortBy
+		) {
 			return { cache: "no-store" };
 		}
 

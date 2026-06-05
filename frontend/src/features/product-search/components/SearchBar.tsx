@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
 export function SearchBar() {
 	const router = useRouter();
+	const pathname = usePathname();
 	const { searchParams, buildMergedHref } = useQueryParams();
 	const defaultQuery = searchParams.get("q") || "";
 
@@ -18,12 +19,28 @@ export function SearchBar() {
 
 	const handleSubmit = (e: React.SubmitEvent) => {
 		e.preventDefault();
-		router.push(buildMergedHref({ q: searchTerm }));
+		const query = searchTerm.trim();
+
+		if (pathname === "/") {
+			router.push(buildMergedHref({ q: query || null }));
+			return;
+		}
+
+		if (query.length === 0) {
+			router.push("/");
+			return;
+		}
+
+		router.push(`/?q=${encodeURIComponent(query)}`);
 	};
 
 	const handleClear = () => {
 		setSearchTerm("");
-		router.push(buildMergedHref({ q: null }));
+		if (pathname === "/") {
+			router.push(buildMergedHref({ q: null }));
+			return;
+		}
+		router.push("/");
 	};
 
 	return (
