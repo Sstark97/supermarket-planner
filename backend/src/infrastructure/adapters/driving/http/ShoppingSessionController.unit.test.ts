@@ -3,9 +3,11 @@ import { ShoppingSessionController } from "./ShoppingSessionController";
 import type { SaveShoppingSessionUseCasePort } from "@application/ports/incoming/SaveShoppingSessionUseCasePort";
 import type { GetShoppingSessionsUseCasePort } from "@application/ports/incoming/GetShoppingSessionsUseCasePort";
 import type { DeleteShoppingSessionUseCasePort } from "@application/ports/incoming/DeleteShoppingSessionUseCasePort";
+import type { GetShoppingSessionMetricsUseCasePort } from "@application/ports/incoming/GetShoppingSessionMetricsUseCasePort";
 import type { Request, Response, NextFunction } from "express";
 import type {
 	DeleteShoppingSessionResult,
+	GetShoppingSessionMetricsResult,
 	GetShoppingSessionsResult,
 	SaveShoppingSessionResult,
 } from "@application/use-cases/shopping-session/contracts";
@@ -59,6 +61,23 @@ const mockDeleteUseCaseResult: DeleteShoppingSessionResult = {
 	deleted: true,
 };
 
+const mockGetMetricsUseCaseResult: GetShoppingSessionMetricsResult = {
+	supermarketDominance: [
+		{ supermarket: "mercadona", totalSpent: 50, totalItems: 20 },
+	],
+	spendingTrends: {
+		weeklyAverage: [{ period: "2026-23", amount: 25 }],
+		monthlyTotal: [{ period: "2026-06", amount: 100 }],
+		yearlyTotal: [{ period: "2026", amount: 1200 }],
+	},
+	ticketMetrics: {
+		averageTicketCost: 25,
+		totalSpentToDate: 1200,
+		totalTickets: 48,
+		mostFrequentGroceryDay: "Sábado",
+	},
+};
+
 function makeMockSaveUseCase(): SaveShoppingSessionUseCasePort {
 	return {
 		execute: vi.fn(async () => mockSaveUseCaseResult),
@@ -77,6 +96,12 @@ function makeMockDeleteUseCase(): DeleteShoppingSessionUseCasePort {
 	};
 }
 
+function makeMockGetMetricsUseCase(): GetShoppingSessionMetricsUseCasePort {
+	return {
+		execute: vi.fn(async () => mockGetMetricsUseCaseResult),
+	};
+}
+
 function makeMockResponse(userId = "user-google-123"): Response {
 	return {
 		status: vi.fn().mockReturnThis(),
@@ -85,7 +110,10 @@ function makeMockResponse(userId = "user-google-123"): Response {
 	} as unknown as Response;
 }
 
-function makeMockRequest(body: unknown, params: Record<string, string> = {}): Request {
+function makeMockRequest(
+	body: unknown,
+	params: Record<string, string> = {},
+): Request {
 	return { body, params } as unknown as Request;
 }
 
@@ -93,16 +121,19 @@ describe("ShoppingSessionController", () => {
 	let saveUseCase: SaveShoppingSessionUseCasePort;
 	let getUseCase: GetShoppingSessionsUseCasePort;
 	let deleteUseCase: DeleteShoppingSessionUseCasePort;
+	let getMetricsUseCase: GetShoppingSessionMetricsUseCasePort;
 	let controller: ShoppingSessionController;
 	let next: NextFunction;
 
 	beforeEach(() => {
 		saveUseCase = makeMockSaveUseCase();
 		getUseCase = makeMockGetUseCase();
+		getMetricsUseCase = makeMockGetMetricsUseCase();
 		deleteUseCase = makeMockDeleteUseCase();
 		controller = new ShoppingSessionController(
 			saveUseCase,
 			getUseCase,
+			getMetricsUseCase,
 			deleteUseCase,
 		);
 		next = vi.fn();
@@ -114,10 +145,35 @@ describe("ShoppingSessionController", () => {
 
 		await controller.get(req, res, next);
 
-		expect(getUseCase.execute).toHaveBeenCalledWith({ userId: "user-google-123" });
+		expect(getUseCase.execute).toHaveBeenCalledWith({
+			userId: "user-google-123",
+		});
 		expect(res.status).toHaveBeenCalledWith(200);
 		expect(res.json).toHaveBeenCalledWith(mockGetUseCaseResult);
 		expect(next).not.toHaveBeenCalled();
+	});
+
+	it("should return 200 with shopping session metrics", async () => {
+		const req = makeMockRequest({});
+		const res = makeMockResponse();
+
+		await controller.getMetrics(req, res, next);
+
+		expect(getMetricsUseCase.execute).toHaveBeenCalledWith({
+			userId: "user-google-123",
+		});
+		expect(res.status).toHaveBeenCalledWith(200);
+		expect(res.json).toHaveBeenCalledWith(mockGetMetricsUseCaseResult);
+	});
+
+	it("should return 401 for metrics when user is unauthorized", async () => {
+		const req = makeMockRequest({});
+		const res = makeMockResponse("");
+
+		await controller.getMetrics(req, res, next);
+
+		expect(res.status).toHaveBeenCalledWith(401);
+		expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
 	});
 
 	it("should return 401 for get when user is unauthorized", async () => {
@@ -164,6 +220,18 @@ describe("ShoppingSessionController", () => {
 		);
 	});
 
+	it("should delegate errors from metrics use case to next()", async () => {
+		const useCaseError = new Error("Unexpected metrics failure");
+		vi.mocked(getMetricsUseCase.execute).mockRejectedValueOnce(useCaseError);
+
+		const req = makeMockRequest({});
+		const res = makeMockResponse();
+
+		await controller.getMetrics(req, res, next);
+
+		expect(next).toHaveBeenCalledWith(useCaseError);
+	});
+
 	it("should delegate errors from get use case to next()", async () => {
 		const useCaseError = new Error("Unexpected get failure");
 		vi.mocked(getUseCase.execute).mockRejectedValueOnce(useCaseError);
@@ -197,7 +265,9 @@ describe("ShoppingSessionController", () => {
 		await controller.delete(req, res, next);
 
 		expect(res.status).toHaveBeenCalledWith(400);
-		expect(res.json).toHaveBeenCalledWith({ error: "Invalid shopping session id" });
+		expect(res.json).toHaveBeenCalledWith({
+			error: "Invalid shopping session id",
+		});
 	});
 
 	it("should return 401 for delete when unauthorized", async () => {
@@ -218,7 +288,9 @@ describe("ShoppingSessionController", () => {
 		await controller.delete(req, res, next);
 
 		expect(res.status).toHaveBeenCalledWith(404);
-		expect(res.json).toHaveBeenCalledWith({ error: "Shopping session not found" });
+		expect(res.json).toHaveBeenCalledWith({
+			error: "Shopping session not found",
+		});
 	});
 
 	it("should delegate errors from delete use case to next()", async () => {

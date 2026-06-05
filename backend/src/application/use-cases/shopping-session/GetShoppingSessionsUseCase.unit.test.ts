@@ -29,6 +29,20 @@ function makeMockRepository(): ShoppingSessionRepository {
 			},
 		]),
 		deleteByIdForUser: vi.fn(async () => false),
+		getMetricsForUser: vi.fn(async () => ({
+			supermarketDominance: [],
+			spendingTrends: {
+				weeklyAverage: [],
+				monthlyTotal: [],
+				yearlyTotal: [],
+			},
+			ticketMetrics: {
+				averageTicketCost: 0,
+				totalSpentToDate: 0,
+				mostFrequentGroceryDay: null,
+				totalTickets: 0,
+			},
+		})),
 	};
 }
 

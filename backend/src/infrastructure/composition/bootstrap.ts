@@ -6,6 +6,7 @@ import { TriggerManualScrapeUseCase } from "@application/use-cases/search/Trigge
 import { SaveShoppingSessionUseCase } from "@application/use-cases/shopping-session/SaveShoppingSessionUseCase";
 import { GetShoppingSessionsUseCase } from "@application/use-cases/shopping-session/GetShoppingSessionsUseCase";
 import { DeleteShoppingSessionUseCase } from "@application/use-cases/shopping-session/DeleteShoppingSessionUseCase";
+import { GetShoppingSessionMetricsUseCase } from "@application/use-cases/shopping-session/GetShoppingSessionMetricsUseCase";
 import { MergeCartUseCase } from "@application/use-cases/active-cart/MergeCartUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
 import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
@@ -81,6 +82,8 @@ export class BackendCompositionBootstrap {
 			shoppingSessionRepository,
 			logger,
 		);
+		const getShoppingSessionMetricsUseCase =
+			new GetShoppingSessionMetricsUseCase(shoppingSessionRepository, logger);
 		const deleteShoppingSessionUseCase = new DeleteShoppingSessionUseCase(
 			shoppingSessionRepository,
 			logger,
@@ -88,6 +91,7 @@ export class BackendCompositionBootstrap {
 		const shoppingSessionController = new ShoppingSessionController(
 			saveShoppingSessionUseCase,
 			getShoppingSessionsUseCase,
+			getShoppingSessionMetricsUseCase,
 			deleteShoppingSessionUseCase,
 		);
 
@@ -113,6 +117,12 @@ export class BackendCompositionBootstrap {
 		});
 
 		app.get("/search", searchController.search);
+
+		app.get(
+			"/api/shopping-sessions/metrics",
+			jwtAuthMiddleware.authenticate,
+			shoppingSessionController.getMetrics,
+		);
 
 		app.get(
 			"/api/shopping-sessions",

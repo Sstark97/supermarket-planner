@@ -9,6 +9,20 @@ function makeMockRepository(): ShoppingSessionRepository {
 		save: vi.fn(async (session: ShoppingSession) => session),
 		findByUserId: vi.fn(async () => []),
 		deleteByIdForUser: vi.fn(async () => true),
+		getMetricsForUser: vi.fn(async () => ({
+			supermarketDominance: [],
+			spendingTrends: {
+				weeklyAverage: [],
+				monthlyTotal: [],
+				yearlyTotal: [],
+			},
+			ticketMetrics: {
+				averageTicketCost: 0,
+				totalSpentToDate: 0,
+				mostFrequentGroceryDay: null,
+				totalTickets: 0,
+			},
+		})),
 	};
 }
 
@@ -38,7 +52,10 @@ describe("DeleteShoppingSessionUseCase", () => {
 			userId: "user-1",
 		});
 
-		expect(repository.deleteByIdForUser).toHaveBeenCalledWith("session-1", "user-1");
+		expect(repository.deleteByIdForUser).toHaveBeenCalledWith(
+			"session-1",
+			"user-1",
+		);
 		expect(result.deleted).toBe(true);
 	});
 

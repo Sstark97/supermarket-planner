@@ -60,3 +60,37 @@ export interface DeleteShoppingSessionInput {
 export interface DeleteShoppingSessionResult {
 	deleted: boolean;
 }
+
+export interface GetShoppingSessionMetricsInput {
+	userId: string;
+}
+
+export interface ShoppingSessionSupermarketDominanceMetric {
+	supermarket: string;
+	totalSpent: number;
+	totalItems: number;
+}
+
+export interface ShoppingSessionTrendPoint {
+	period: string;
+	amount: number;
+}
+
+export interface ShoppingSessionSpendingTrends {
+	weeklyAverage: ShoppingSessionTrendPoint[];
+	monthlyTotal: ShoppingSessionTrendPoint[];
+	yearlyTotal: ShoppingSessionTrendPoint[];
+}
+
+export interface ShoppingSessionTicketMetrics {
+	averageTicketCost: number;
+	totalSpentToDate: number;
+	mostFrequentGroceryDay: string | null;
+	totalTickets: number;
+}
+
+export interface GetShoppingSessionMetricsResult {
+	supermarketDominance: ShoppingSessionSupermarketDominanceMetric[];
+	spendingTrends: ShoppingSessionSpendingTrends;
+	ticketMetrics: ShoppingSessionTicketMetrics;
+}
