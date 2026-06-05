@@ -1,39 +1,66 @@
 import type {
-  SaveShoppingSessionRequest,
-  SaveShoppingSessionResponse,
-  ShoppingSessionGateway,
+	ListShoppingSessionsResponse,
+	SaveShoppingSessionRequest,
+	SaveShoppingSessionResponse,
+	ShoppingSessionGateway,
 } from "./ShoppingSessionGateway";
 
-type ShoppingSessionApiResponse = SaveShoppingSessionResponse & {
-  error?: string;
+type SaveShoppingSessionApiResponse = SaveShoppingSessionResponse & {
+	error?: string;
+};
+
+type ListShoppingSessionsApiResponse = ListShoppingSessionsResponse & {
+	error?: string;
 };
 
 export class ShoppingSessionHttpClient implements ShoppingSessionGateway {
-  constructor(private readonly baseUrl: string) {}
+	constructor(private readonly baseUrl: string) {}
 
-  async save(
-    request: SaveShoppingSessionRequest,
-    token: string,
-  ): Promise<SaveShoppingSessionResponse> {
-    const url = `${this.baseUrl}/api/shopping-sessions`;
+	async save(
+		request: SaveShoppingSessionRequest,
+		token: string,
+	): Promise<SaveShoppingSessionResponse> {
+		const url = `${this.baseUrl}/api/shopping-sessions`;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(request),
-    });
+		const res = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(request),
+		});
 
-    const json = (await res.json()) as ShoppingSessionApiResponse;
+		const json = (await res.json()) as SaveShoppingSessionApiResponse;
 
-    if (!res.ok) {
-      throw new Error(
-        `Shopping session API error ${res.status}: ${json.error ?? "Unknown error"}`,
-      );
-    }
+		if (!res.ok) {
+			throw new Error(
+				`Shopping session API error ${res.status}: ${json.error ?? "Unknown error"}`,
+			);
+		}
 
-    return json;
-  }
+		return json;
+	}
+
+	async list(token: string): Promise<ListShoppingSessionsResponse> {
+		const url = `${this.baseUrl}/api/shopping-sessions`;
+
+		const res = await fetch(url, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			cache: "no-store",
+		});
+
+		const json = (await res.json()) as ListShoppingSessionsApiResponse;
+
+		if (!res.ok) {
+			throw new Error(
+				`Shopping session API error ${res.status}: ${json.error ?? "Unknown error"}`,
+			);
+		}
+
+		return json;
+	}
 }
