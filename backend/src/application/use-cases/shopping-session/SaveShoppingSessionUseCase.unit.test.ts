@@ -29,6 +29,20 @@ const makeMockRepository = (): ShoppingSessionRepository => ({
 	save: vi.fn(async (session: ShoppingSession) => session),
 	findByUserId: vi.fn(async () => []),
 	deleteByIdForUser: vi.fn(async () => false),
+	getMetricsForUser: vi.fn(async () => ({
+		supermarketDominance: [],
+		spendingTrends: {
+			weeklyAverage: [],
+			monthlyTotal: [],
+			yearlyTotal: [],
+		},
+		ticketMetrics: {
+			averageTicketCost: 0,
+			totalSpentToDate: 0,
+			mostFrequentGroceryDay: null,
+			totalTickets: 0,
+		},
+	})),
 });
 
 const makeMockLogger = (): LoggerPort => ({

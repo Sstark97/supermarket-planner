@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { SaveShoppingSessionUseCasePort } from "@application/ports/incoming/SaveShoppingSessionUseCasePort";
 import type { GetShoppingSessionsUseCasePort } from "@application/ports/incoming/GetShoppingSessionsUseCasePort";
 import type { DeleteShoppingSessionUseCasePort } from "@application/ports/incoming/DeleteShoppingSessionUseCasePort";
+import type { GetShoppingSessionMetricsUseCasePort } from "@application/ports/incoming/GetShoppingSessionMetricsUseCasePort";
 
 const shoppingSessionItemSchema = z.object({
 	productName: z.string().min(1),
@@ -32,8 +33,30 @@ export class ShoppingSessionController {
 	constructor(
 		private readonly saveShoppingSessionUseCase: SaveShoppingSessionUseCasePort,
 		private readonly getShoppingSessionsUseCase: GetShoppingSessionsUseCasePort,
+		private readonly getShoppingSessionMetricsUseCase: GetShoppingSessionMetricsUseCasePort,
 		private readonly deleteShoppingSessionUseCase: DeleteShoppingSessionUseCasePort,
 	) {}
+
+	getMetrics = async (
+		_req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> => {
+		try {
+			const userId: unknown = res.locals.userId;
+			if (typeof userId !== "string" || userId.length === 0) {
+				res.status(401).json({ error: "Unauthorized" });
+				return;
+			}
+
+			const result = await this.getShoppingSessionMetricsUseCase.execute({
+				userId,
+			});
+			res.status(200).json(result);
+		} catch (error) {
+			next(error);
+		}
+	};
 
 	get = async (
 		_req: Request,
