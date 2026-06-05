@@ -69,7 +69,7 @@ export function ShoppingHistoryInsightsPanel({
 							onModeChange={setActiveTrendMode}
 						/>
 					</div>
-					<SpendingTrendChart points={trendData} />
+					<SpendingTrendChart points={trendData} mode={activeTrendMode} />
 				</div>
 			</div>
 		</div>
