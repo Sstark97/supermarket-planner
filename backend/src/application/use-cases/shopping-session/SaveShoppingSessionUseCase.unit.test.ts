@@ -5,7 +5,9 @@ import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
 import type { ShoppingSession } from "@domain/entities/ShoppingSession";
 import type { SaveShoppingSessionInput } from "./contracts";
 
-const makeValidInput = (overrides: Partial<SaveShoppingSessionInput> = {}): SaveShoppingSessionInput => ({
+const makeValidInput = (
+	overrides: Partial<SaveShoppingSessionInput> = {},
+): SaveShoppingSessionInput => ({
 	userId: "user-google-123",
 	shoppedAt: "2026-05-31",
 	items: [
@@ -25,6 +27,7 @@ const makeValidInput = (overrides: Partial<SaveShoppingSessionInput> = {}): Save
 
 const makeMockRepository = (): ShoppingSessionRepository => ({
 	save: vi.fn(async (session: ShoppingSession) => session),
+	findByUserId: vi.fn(async () => []),
 });
 
 const makeMockLogger = (): LoggerPort => ({

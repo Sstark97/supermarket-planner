@@ -4,6 +4,7 @@ import { RefreshProductsCatalogUseCase } from "@application/use-cases/search/Ref
 import { SearchProductsUseCase } from "@application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
 import { SaveShoppingSessionUseCase } from "@application/use-cases/shopping-session/SaveShoppingSessionUseCase";
+import { GetShoppingSessionsUseCase } from "@application/use-cases/shopping-session/GetShoppingSessionsUseCase";
 import { MergeCartUseCase } from "@application/use-cases/active-cart/MergeCartUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
 import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
@@ -75,8 +76,13 @@ export class BackendCompositionBootstrap {
 			shoppingSessionRepository,
 			logger,
 		);
+		const getShoppingSessionsUseCase = new GetShoppingSessionsUseCase(
+			shoppingSessionRepository,
+			logger,
+		);
 		const shoppingSessionController = new ShoppingSessionController(
 			saveShoppingSessionUseCase,
+			getShoppingSessionsUseCase,
 		);
 
 		const activeCartRepository = new PrismaActiveCartRepository();
@@ -101,6 +107,12 @@ export class BackendCompositionBootstrap {
 		});
 
 		app.get("/search", searchController.search);
+
+		app.get(
+			"/api/shopping-sessions",
+			jwtAuthMiddleware.authenticate,
+			shoppingSessionController.get,
+		);
 
 		app.post(
 			"/api/shopping-sessions",

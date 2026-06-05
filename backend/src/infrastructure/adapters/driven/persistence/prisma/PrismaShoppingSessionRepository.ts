@@ -3,7 +3,9 @@ import type { ShoppingSession } from "@domain/entities/ShoppingSession";
 import { prisma } from "./prisma";
 import { PrismaShoppingSessionMapper } from "./PrismaShoppingSessionMapper";
 
-export class PrismaShoppingSessionRepository implements ShoppingSessionRepository {
+export class PrismaShoppingSessionRepository
+	implements ShoppingSessionRepository
+{
 	async save(session: ShoppingSession): Promise<ShoppingSession> {
 		const createPayload = PrismaShoppingSessionMapper.toCreatePayload(session);
 
@@ -13,5 +15,17 @@ export class PrismaShoppingSessionRepository implements ShoppingSessionRepositor
 		});
 
 		return PrismaShoppingSessionMapper.toDomainEntity(savedRecord);
+	}
+
+	async findByUserId(userId: string): Promise<ShoppingSession[]> {
+		const records = await prisma.shoppingSession.findMany({
+			where: { userId },
+			orderBy: [{ shoppedAt: "desc" }, { createdAt: "desc" }],
+			include: { items: true },
+		});
+
+		return records.map((record) =>
+			PrismaShoppingSessionMapper.toDomainEntity(record),
+		);
 	}
 }
