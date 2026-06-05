@@ -36,38 +36,61 @@ export class LidlScraperAdapter extends PlaywrightScraperAdapterBase {
 			await blockUnnecessaryResources(page);
 			await randomDelay(300, 800);
 
-			const url = `https://www.lidl.es/buscar?q=${encodeURIComponent(query)}`;
+			const url = `https://www.lidl.es/q/search?q=${encodeURIComponent(query)}`;
 			logger.info(`[Lidl] Navigating to ${url}`);
 			await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
 
-			logger.info(`[Lidl] Waiting for article selectors...`);
+			logger.info(`[Lidl] Waiting for product tiles...`);
 			await page
-				.waitForSelector('[class*="product"], article', { timeout: 8000 })
+				.waitForSelector(".odsc-tile, .product-grid-box", { timeout: 10000 })
 				.catch(() =>
-					logger.warn(`[Lidl] Article selector timeout or not found`),
+					logger.warn(`[Lidl] Product tile selector timeout or not found`),
 				);
 
 			logger.info(`[Lidl] Evaluating DOM...`);
 			const rawProducts = await page.evaluate<LidlRawProduct[]>(() => {
-				const cards = document.querySelectorAll(
-					'article, [class*="product-grid-item"], [class*="ProductCard"]',
-				);
-				return Array.from(cards).map((card) => ({
-					name:
-						card
-							.querySelector('h3, h4, [class*="title"], [class*="name"]')
-							?.textContent?.trim() ?? "",
-					price:
-						card
-							.querySelector('[class*="price"], .price')
-							?.textContent?.trim() ?? "",
-					image: (card.querySelector("img") as HTMLImageElement)?.src ?? "",
-					link: (card.querySelector("a") as HTMLAnchorElement)?.href ?? "",
-					unit:
-						card
-							.querySelector('[class*="unit"], [class*="per"]')
-							?.textContent?.trim() ?? "1 ud",
-				}));
+				const cards = document.querySelectorAll<HTMLElement>(".odsc-tile");
+				const results: LidlRawProduct[] = [];
+
+				for (const card of Array.from(cards)) {
+					const gridDataRaw = card.getAttribute("data-grid-data");
+					if (!gridDataRaw) {
+						continue;
+					}
+
+					try {
+						const gridData = JSON.parse(gridDataRaw) as {
+							title?: string;
+							fullTitle?: string;
+							canonicalUrl?: string;
+							image?: string;
+							price?: { price?: number; packaging?: { text?: string } };
+						};
+
+						const name =
+							gridData.title?.trim() || gridData.fullTitle?.trim() || "";
+						const numericPrice = gridData.price?.price;
+						const price =
+							typeof numericPrice === "number" ? String(numericPrice) : "";
+						const canonicalUrl = gridData.canonicalUrl?.trim() ?? "";
+						const link = canonicalUrl
+							? new URL(canonicalUrl, window.location.origin).toString()
+							: "";
+						const unit = gridData.price?.packaging?.text?.trim() ?? "1 ud";
+
+						results.push({
+							name,
+							price,
+							image: gridData.image?.trim() ?? "",
+							link,
+							unit,
+						});
+					} catch {
+						// Ignore malformed cards and continue scraping.
+					}
+				}
+
+				return results;
 			});
 
 			return Promise.all(
