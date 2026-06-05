@@ -16,7 +16,7 @@ export function Header(): React.ReactElement {
 						<ShoppingBasket size={20} className="text-white" />
 					</div>
 					<span className="font-bold text-lg hidden sm:block tracking-tight text-slate-900">
-						Antigravity
+						Kilox
 						<span className="text-slate-400 font-medium">Market</span>
 					</span>
 				</Link>

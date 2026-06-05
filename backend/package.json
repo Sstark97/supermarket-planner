@@ -1,5 +1,5 @@
 {
-  "name": "antigravity-backend",
+  "name": "Kilox-backend",
   "version": "1.0.0",
   "description": "Web scraping API for supermarket price comparison in Las Palmas de Gran Canaria",
   "main": "dist/index.js",

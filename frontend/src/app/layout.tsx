@@ -11,7 +11,7 @@ import { ToastProvider } from "@/components/Toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-	title: "Antigravity Market | Tu Comparador de Supermercados",
+	title: "Kilox Market | Tu Comparador de Supermercados",
 	description:
 		"Compara precios entre Mercadona, HiperDino, Carrefour, Lidl y Aldi en Las Palmas de Gran Canaria.",
 };

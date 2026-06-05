@@ -15,7 +15,7 @@ async function bootstrap() {
 
 	app.listen(config.port, () => {
 		logger.info(
-			`🚀 Antigravity backend running at http://localhost:${config.port}`,
+			`🚀 Kilox backend running at http://localhost:${config.port}`,
 		);
 		logger.info(
 			`   GET /search?q=<query> — search across ${scrapers.length} supermarkets`,

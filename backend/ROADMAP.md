@@ -1,4 +1,4 @@
-# 🚀 Project Antigravity - System Architecture & Roadmap
+# 🚀 Project Kilox - System Architecture & Roadmap
 
 ## 1. Arquitectura del Proyecto
 
