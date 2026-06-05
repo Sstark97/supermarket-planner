@@ -9,6 +9,7 @@ interface ShoppingHistoryEntriesState {
 	entries: ShoppingSessionHistoryEntry[];
 	isLoading: boolean;
 	errorMessage: string | null;
+	removeEntryBySessionId: (sessionId: string) => void;
 }
 
 export function useShoppingHistoryEntries(
@@ -55,9 +56,16 @@ export function useShoppingHistoryEntries(
 		};
 	}, [shoppingSessionGateway, status]);
 
+	function removeEntryBySessionId(sessionId: string): void {
+		setEntries((currentEntries) =>
+			currentEntries.filter((entry) => entry.sessionId !== sessionId),
+		);
+	}
+
 	return {
 		entries,
 		isLoading,
 		errorMessage,
+		removeEntryBySessionId,
 	};
 }

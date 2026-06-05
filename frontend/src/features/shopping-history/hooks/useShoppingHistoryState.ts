@@ -5,6 +5,7 @@ import type { YearGroup } from "@/features/shopping-history/model/ShoppingHistor
 import { ShoppingHistoryEntryFilter } from "@/features/shopping-history/model/ShoppingHistoryEntryFilter";
 import { ShoppingHistoryTimelineGrouper } from "@/features/shopping-history/model/ShoppingHistoryTimelineGrouper";
 import { ShoppingHistoryAccordionStateProjector } from "@/features/shopping-history/model/ShoppingHistoryAccordionStateProjector";
+import { ShoppingHistoryDeleteCoordinator } from "@/features/shopping-history/model/ShoppingHistoryDeleteCoordinator";
 import { useShoppingHistoryEntries } from "./useShoppingHistoryEntries";
 import { useShoppingHistoryFilters } from "./useShoppingHistoryFilters";
 import {
@@ -12,12 +13,14 @@ import {
 	type ShoppingHistorySelectionState,
 } from "./useShoppingHistorySelection";
 import { useShoppingHistoryAccordion } from "./useShoppingHistoryAccordion";
+import { useShoppingHistoryDelete } from "./useShoppingHistoryDelete";
 
 interface ShoppingHistoryStateDependencies {
 	shoppingSessionGateway: ShoppingSessionGateway;
 	entryFilter: ShoppingHistoryEntryFilter;
 	timelineGrouper: ShoppingHistoryTimelineGrouper;
 	accordionStateProjector: ShoppingHistoryAccordionStateProjector;
+	deleteCoordinator: ShoppingHistoryDeleteCoordinator;
 }
 
 interface ShoppingHistoryState {
@@ -42,6 +45,11 @@ interface ShoppingHistoryState {
 	handleSelectSession: (sessionId: string) => void;
 	setSelectedSessionId: (sessionId: string | null) => void;
 	setMobileViewMode: ShoppingHistorySelectionState["setMobileViewMode"];
+	isDeleteDialogOpen: boolean;
+	isDeletingSession: boolean;
+	openDeleteConfirmation: (sessionId: string) => void;
+	closeDeleteConfirmation: () => void;
+	confirmDeleteSession: () => Promise<void>;
 }
 
 export function useShoppingHistoryState(
@@ -53,12 +61,11 @@ export function useShoppingHistoryState(
 		entryFilter,
 		timelineGrouper,
 		accordionStateProjector,
+		deleteCoordinator,
 	} = dependencies;
 
-	const { entries, isLoading, errorMessage } = useShoppingHistoryEntries(
-		status,
-		shoppingSessionGateway,
-	);
+	const { entries, isLoading, errorMessage, removeEntryBySessionId } =
+		useShoppingHistoryEntries(status, shoppingSessionGateway);
 
 	const {
 		searchTerm,
@@ -82,6 +89,14 @@ export function useShoppingHistoryState(
 	const { openYearKeys, openMonthKeys, handleToggleYear, handleToggleMonth } =
 		useShoppingHistoryAccordion(groupedEntries, accordionStateProjector);
 
+	const {
+		isConfirmationDialogOpen,
+		isDeleting,
+		openDeleteConfirmation,
+		closeDeleteConfirmation,
+		confirmDelete,
+	} = useShoppingHistoryDelete(deleteCoordinator, removeEntryBySessionId);
+
 	return {
 		filteredEntries,
 		groupedEntries,
@@ -102,5 +117,10 @@ export function useShoppingHistoryState(
 		handleSelectSession,
 		setSelectedSessionId,
 		setMobileViewMode,
+		isDeleteDialogOpen: isConfirmationDialogOpen,
+		isDeletingSession: isDeleting,
+		openDeleteConfirmation,
+		closeDeleteConfirmation,
+		confirmDeleteSession: confirmDelete,
 	};
 }

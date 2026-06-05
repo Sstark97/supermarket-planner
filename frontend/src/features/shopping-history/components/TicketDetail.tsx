@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Trash2 } from "lucide-react";
 import type { ShoppingSessionHistoryEntry } from "@/lib/http/ShoppingSessionGateway";
 import { ShoppingHistoryDateFormatter } from "@/features/shopping-history/model/ShoppingHistoryDateFormatter";
 import { ShoppingHistoryBreakdownCalculator } from "@/features/shopping-history/model/ShoppingHistoryBreakdownCalculator";
@@ -11,6 +11,7 @@ interface TicketDetailProps {
 	isMobile: boolean;
 	dateFormatter: ShoppingHistoryDateFormatter;
 	breakdownCalculator: ShoppingHistoryBreakdownCalculator;
+	onDeleteRequest?: (sessionId: string) => void;
 }
 
 export function TicketDetail({
@@ -19,6 +20,7 @@ export function TicketDetail({
 	isMobile,
 	dateFormatter,
 	breakdownCalculator,
+	onDeleteRequest,
 }: TicketDetailProps): React.ReactElement {
 	if (!entry) {
 		return (
@@ -48,6 +50,17 @@ export function TicketDetail({
 			)}
 
 			<div className="flex flex-wrap items-end justify-between gap-4">
+				{onDeleteRequest && (
+					<div className="w-full flex justify-end">
+						<button
+							onClick={() => onDeleteRequest(entry.sessionId)}
+							className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+						>
+							<Trash2 size={14} />
+							Eliminar
+						</button>
+					</div>
+				)}
 				<div>
 					<h2 className="text-xl font-bold text-slate-900">
 						Detalle de compra
