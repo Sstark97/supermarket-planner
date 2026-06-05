@@ -75,14 +75,16 @@ export function MobileBottomNav(): React.ReactElement {
 					</Link>
 				)}
 
-				<button
-					onClick={openFilter}
-					aria-label="Filtros"
-					className="flex flex-col items-center justify-center gap-0.5 flex-1 h-16 text-xs text-slate-500 hover:text-slate-700 transition-colors"
-				>
-					<SlidersHorizontal size={20} />
-					<span>Filtros</span>
-				</button>
+				{isHome && (
+					<button
+						onClick={openFilter}
+						aria-label="Filtros"
+						className="flex flex-col items-center justify-center gap-0.5 flex-1 h-16 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+					>
+						<SlidersHorizontal size={20} />
+						<span>Filtros</span>
+					</button>
+				)}
 
 				<button
 					onClick={openCart}
