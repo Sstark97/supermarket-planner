@@ -2,9 +2,9 @@ import React, { Suspense } from "react";
 import Link from "next/link";
 import { SearchBar } from "./SearchBar";
 import { CartButton } from "./CartButton";
-import { CategoriesToggleButton } from "./CategoriesToggleButton";
+import { ProductPageCategoriesToggleButton } from "./ProductPageCategoriesToggleButton";
 import { LoginButton } from "./LoginButton";
-import { ShoppingBasket } from "lucide-react";
+import { History, ShoppingBasket } from "lucide-react";
 
 export function Header(): React.ReactElement {
 	return (
@@ -23,14 +23,23 @@ export function Header(): React.ReactElement {
 
 				{/* Search Bar — full width on mobile, constrained on desktop */}
 				<div className="flex-1 w-full max-w-2xl mx-auto">
-					<Suspense fallback={<div className="h-10 w-full rounded-full bg-slate-100" />}>
+					<Suspense
+						fallback={<div className="h-10 w-full rounded-full bg-slate-100" />}
+					>
 						<SearchBar />
 					</Suspense>
 				</div>
 
 				{/* Desktop actions: categories toggle + cart + login */}
 				<div className="hidden md:flex items-center gap-2 shrink-0">
-					<CategoriesToggleButton />
+					<Link
+						href="/shopping-history"
+						className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+					>
+						<History size={16} />
+						Historial
+					</Link>
+					<ProductPageCategoriesToggleButton />
 					<CartButton />
 					<LoginButton />
 				</div>

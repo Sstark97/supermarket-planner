@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, X, Plus, Minus, Trash2, Save } from "lucide-react";
+import Link from "next/link";
+import {
+	ShoppingCart,
+	X,
+	Plus,
+	Minus,
+	Trash2,
+	Save,
+	History,
+} from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { useCartUiStore } from "@/store/cartUiStore";
@@ -12,7 +21,8 @@ import { getAuthToken } from "@/lib/auth/getAuthToken";
 import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
 import { CartItemMapper } from "@/features/shopping-history/CartItemMapper";
 
-const shoppingSessionGateway = new ClientContainerDI().resolveShoppingSessionGateway();
+const shoppingSessionGateway =
+	new ClientContainerDI().resolveShoppingSessionGateway();
 
 export function CartSidebar(): React.ReactElement | null {
 	const items = useCartStore((state) => state.items);
@@ -27,11 +37,19 @@ export function CartSidebar(): React.ReactElement | null {
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isSavedConfirmationVisible, setIsSavedConfirmationVisible] =
+		useState(false);
+
+	function handleCloseCart(): void {
+		setIsSavedConfirmationVisible(false);
+		closeCart();
+	}
 
 	if (!isOpen) return null;
 
 	function handleSaveButtonClick(): void {
 		if (session?.user) {
+			setIsSavedConfirmationVisible(false);
 			setIsModalOpen(true);
 		} else {
 			void signIn("google");
@@ -43,11 +61,14 @@ export function CartSidebar(): React.ReactElement | null {
 		try {
 			const token = await getAuthToken();
 			const sessionItems = CartItemMapper.toSessionItems(items);
-			await shoppingSessionGateway.save({ shoppedAt, items: sessionItems }, token);
+			await shoppingSessionGateway.save(
+				{ shoppedAt, items: sessionItems },
+				token,
+			);
 			showToast("Compra guardada correctamente", "success");
 			clearCart();
 			setIsModalOpen(false);
-			closeCart();
+			setIsSavedConfirmationVisible(true);
 		} catch {
 			showToast("Error al guardar la compra", "error");
 		} finally {
@@ -56,7 +77,9 @@ export function CartSidebar(): React.ReactElement | null {
 	}
 
 	const hasSaveButton = items.length > 0;
-	const saveButtonLabel = session?.user ? "Guardar compra" : "Inicia sesión para guardar";
+	const saveButtonLabel = session?.user
+		? "Guardar compra"
+		: "Inicia sesión para guardar";
 
 	return (
 		<>
@@ -64,7 +87,7 @@ export function CartSidebar(): React.ReactElement | null {
 				{/* Dark backdrop */}
 				<div
 					className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
-					onClick={closeCart}
+					onClick={handleCloseCart}
 				/>
 
 				{/* Cart panel — slides up from bottom on mobile, in from right on desktop */}
@@ -75,7 +98,7 @@ export function CartSidebar(): React.ReactElement | null {
 							Tu Compra
 						</h2>
 						<button
-							onClick={closeCart}
+							onClick={handleCloseCart}
 							className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors min-w-11 min-h-11 flex items-center justify-center"
 						>
 							<X size={20} />
@@ -83,7 +106,35 @@ export function CartSidebar(): React.ReactElement | null {
 					</div>
 
 					<div className="flex-1 overflow-y-auto p-5">
-						{items.length === 0 ? (
+						{isSavedConfirmationVisible ? (
+							<div className="flex flex-col items-center justify-center h-full text-center px-4">
+								<div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center mb-4">
+									<History size={22} />
+								</div>
+								<h3 className="text-lg font-semibold text-slate-900 mb-2">
+									Compra guardada
+								</h3>
+								<p className="text-slate-600 mb-5">
+									Ya podés revisar el detalle en tu historial.
+								</p>
+								<div className="w-full max-w-xs space-y-2">
+									<Link
+										href="/shopping-history"
+										onClick={handleCloseCart}
+										className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors"
+									>
+										<History size={16} />
+										Ver historial
+									</Link>
+									<button
+										onClick={handleCloseCart}
+										className="w-full inline-flex items-center justify-center px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors"
+									>
+										Seguir comprando
+									</button>
+								</div>
+							</div>
+						) : items.length === 0 ? (
 							<div className="flex flex-col items-center justify-center h-full text-slate-400">
 								<ShoppingCart size={48} className="mb-4 opacity-20" />
 								<p>Tu carrito está vacío</p>
