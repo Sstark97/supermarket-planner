@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { History, ShoppingBasket } from "lucide-react";
@@ -7,13 +8,22 @@ import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
 import { TimelinePanel } from "@/features/shopping-history/components/TimelinePanel";
 import { TicketDetail } from "@/features/shopping-history/components/TicketDetail";
 import { DeleteShoppingSessionConfirmationDialog } from "@/features/shopping-history/components/DeleteShoppingSessionConfirmationDialog";
+import { ShoppingHistoryInsightsPanel } from "@/features/shopping-history/components/ShoppingHistoryInsightsPanel";
+import {
+	ShoppingHistoryViewTabs,
+	type ShoppingHistoryViewMode,
+} from "@/features/shopping-history/components/ShoppingHistoryViewTabs";
 import { useShoppingHistoryState } from "@/features/shopping-history/hooks/useShoppingHistoryState";
+import { useShoppingHistoryMetrics } from "@/features/shopping-history/hooks/useShoppingHistoryMetrics";
 import { ShoppingHistoryDateFormatter } from "@/features/shopping-history/model/ShoppingHistoryDateFormatter";
 import { ShoppingHistoryTimelineGrouper } from "@/features/shopping-history/model/ShoppingHistoryTimelineGrouper";
 import { ShoppingHistoryEntryFilter } from "@/features/shopping-history/model/ShoppingHistoryEntryFilter";
 import { ShoppingHistoryBreakdownCalculator } from "@/features/shopping-history/model/ShoppingHistoryBreakdownCalculator";
 import { ShoppingHistoryAccordionStateProjector } from "@/features/shopping-history/model/ShoppingHistoryAccordionStateProjector";
 import { ShoppingHistoryDeleteCoordinator } from "@/features/shopping-history/model/ShoppingHistoryDeleteCoordinator";
+import { ShoppingHistoryMetricsChartMapper } from "@/features/shopping-history/model/ShoppingHistoryMetricsChartMapper";
+import { ShoppingHistoryMetricsFormatter } from "@/features/shopping-history/model/ShoppingHistoryMetricsFormatter";
+import { ShoppingHistoryInsightsModelAssembler } from "@/features/shopping-history/model/ShoppingHistoryInsightsModelAssembler";
 
 const shoppingSessionGateway =
 	new ClientContainerDI().resolveShoppingSessionGateway();
@@ -22,10 +32,20 @@ const timelineGrouper = new ShoppingHistoryTimelineGrouper(dateFormatter);
 const entryFilter = new ShoppingHistoryEntryFilter();
 const breakdownCalculator = new ShoppingHistoryBreakdownCalculator();
 const accordionStateProjector = new ShoppingHistoryAccordionStateProjector();
-const deleteCoordinator = new ShoppingHistoryDeleteCoordinator(shoppingSessionGateway);
+const deleteCoordinator = new ShoppingHistoryDeleteCoordinator(
+	shoppingSessionGateway,
+);
+const metricsChartMapper = new ShoppingHistoryMetricsChartMapper();
+const metricsFormatter = new ShoppingHistoryMetricsFormatter();
+const insightsModelAssembler = new ShoppingHistoryInsightsModelAssembler(
+	metricsChartMapper,
+	metricsFormatter,
+);
 
 export default function ShoppingHistoryPage(): React.ReactElement {
 	const { data: session, status } = useSession();
+	const [activeView, setActiveView] =
+		useState<ShoppingHistoryViewMode>("history");
 	const {
 		filteredEntries,
 		groupedEntries,
@@ -57,6 +77,15 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 		timelineGrouper,
 		accordionStateProjector,
 		deleteCoordinator,
+	});
+
+	const {
+		metrics,
+		isLoading: isMetricsLoading,
+		errorMessage: metricsErrorMessage,
+	} = useShoppingHistoryMetrics(status, activeView === "insights", {
+		shoppingSessionGateway,
+		modelAssembler: insightsModelAssembler,
 	});
 
 	if (status === "loading" || isLoading) {
@@ -96,13 +125,20 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 	return (
 		<div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
 			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold text-slate-900">
-						Historial de compras
-					</h1>
-					<p className="text-slate-600 mt-1">
-						Revisá tus listas pasadas, totales y distribución por supermercado.
-					</p>
+				<div className="space-y-3">
+					<div>
+						<h1 className="text-2xl font-bold text-slate-900">
+							Historial de compras
+						</h1>
+						<p className="text-slate-600 mt-1">
+							Revisá tus listas pasadas, totales y distribución por
+							supermercado.
+						</p>
+					</div>
+					<ShoppingHistoryViewTabs
+						activeView={activeView}
+						onViewChange={setActiveView}
+					/>
 				</div>
 				<Link
 					href="/"
@@ -119,7 +155,13 @@ export default function ShoppingHistoryPage(): React.ReactElement {
 				</div>
 			)}
 
-			{filteredEntries.length === 0 ? (
+			{activeView === "insights" ? (
+				<ShoppingHistoryInsightsPanel
+					metrics={metrics}
+					isLoading={isMetricsLoading}
+					errorMessage={metricsErrorMessage}
+				/>
+			) : filteredEntries.length === 0 ? (
 				<div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-600">
 					No encontramos compras para esos filtros.
 				</div>
