@@ -83,7 +83,7 @@ export class PrismaShoppingSessionRepository
 						COUNT(*)::bigint AS "totalTickets"
 					FROM "ShoppingSession" ss
 					WHERE ss."userId" = ${userId}
-					GROUP BY "dayOfWeek"
+					GROUP BY EXTRACT(DOW FROM ss."shoppedAt")::int
 					ORDER BY "totalTickets" DESC, "dayOfWeek" ASC
 					LIMIT 1
 				`,
