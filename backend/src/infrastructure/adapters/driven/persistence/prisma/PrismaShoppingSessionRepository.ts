@@ -28,4 +28,15 @@ export class PrismaShoppingSessionRepository
 			PrismaShoppingSessionMapper.toDomainEntity(record),
 		);
 	}
+
+	async deleteByIdForUser(sessionId: string, userId: string): Promise<boolean> {
+		const result = await prisma.shoppingSession.deleteMany({
+			where: {
+				id: sessionId,
+				userId,
+			},
+		});
+
+		return result.count > 0;
+	}
 }

@@ -5,6 +5,7 @@ import { SearchProductsUseCase } from "@application/use-cases/search/SearchProdu
 import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
 import { SaveShoppingSessionUseCase } from "@application/use-cases/shopping-session/SaveShoppingSessionUseCase";
 import { GetShoppingSessionsUseCase } from "@application/use-cases/shopping-session/GetShoppingSessionsUseCase";
+import { DeleteShoppingSessionUseCase } from "@application/use-cases/shopping-session/DeleteShoppingSessionUseCase";
 import { MergeCartUseCase } from "@application/use-cases/active-cart/MergeCartUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
 import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
@@ -80,9 +81,14 @@ export class BackendCompositionBootstrap {
 			shoppingSessionRepository,
 			logger,
 		);
+		const deleteShoppingSessionUseCase = new DeleteShoppingSessionUseCase(
+			shoppingSessionRepository,
+			logger,
+		);
 		const shoppingSessionController = new ShoppingSessionController(
 			saveShoppingSessionUseCase,
 			getShoppingSessionsUseCase,
+			deleteShoppingSessionUseCase,
 		);
 
 		const activeCartRepository = new PrismaActiveCartRepository();
@@ -118,6 +124,12 @@ export class BackendCompositionBootstrap {
 			"/api/shopping-sessions",
 			jwtAuthMiddleware.authenticate,
 			shoppingSessionController.save,
+		);
+
+		app.delete(
+			"/api/shopping-sessions/:id",
+			jwtAuthMiddleware.authenticate,
+			shoppingSessionController.delete,
 		);
 
 		app.post(

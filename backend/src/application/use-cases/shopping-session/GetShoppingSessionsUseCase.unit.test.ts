@@ -28,6 +28,7 @@ function makeMockRepository(): ShoppingSessionRepository {
 				],
 			},
 		]),
+		deleteByIdForUser: vi.fn(async () => false),
 	};
 }
 
