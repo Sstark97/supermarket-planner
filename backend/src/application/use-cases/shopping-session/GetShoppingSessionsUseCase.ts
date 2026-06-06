@@ -4,7 +4,9 @@ import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
 import type {
 	GetShoppingSessionsInput,
 	GetShoppingSessionsResult,
+	ShoppingSessionHistoryItem,
 } from "./contracts";
+import type { ShoppingSessionItem } from "@domain/entities/ShoppingSession";
 
 export class GetShoppingSessionsUseCase
 	implements GetShoppingSessionsUseCasePort
@@ -31,19 +33,23 @@ export class GetShoppingSessionsUseCase
 				shoppedAt: session.shoppedAt.toISOString(),
 				totalPrice: session.totalPrice,
 				createdAt: session.createdAt.toISOString(),
-				items: session.items.map((item) => ({
-					productName: item.productName,
-					supermarket: item.supermarket,
-					category: item.category,
-					price: item.price,
-					pricePerUnit: item.pricePerUnit,
-					unit: item.unit,
-					taxType: item.taxType,
-					quantity: item.quantity,
-					image: item.image,
-					url: item.url,
-				})),
+				items: session.items.map((item) => this.mapSessionItemToOutput(item)),
 			})),
+		};
+	}
+
+	private mapSessionItemToOutput(item: ShoppingSessionItem): ShoppingSessionHistoryItem {
+		return {
+			productName: item.productName,
+			supermarket: item.supermarket,
+			category: item.category,
+			price: item.price,
+			pricePerUnit: item.pricePerUnit,
+			unit: item.unit,
+			taxType: item.taxType,
+			quantity: item.quantity,
+			image: item.image,
+			url: item.url,
 		};
 	}
 }

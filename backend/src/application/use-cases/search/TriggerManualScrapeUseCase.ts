@@ -44,16 +44,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 		const results: IProduct[] = [];
 		settledResults.forEach((outcome, index) => {
 			const scraperName = this.scrapers[index].name;
-			if (outcome.status === "fulfilled") {
-				results.push(...outcome.value);
-				return;
-			}
-
-			const rejectionReason = this.formatRejectionReason(outcome.reason);
-			this.logger.error(
-				`[TriggerManualScrapeUseCase] ${scraperName} rejected: ${rejectionReason}`,
-			);
-			warnings.push(`${scraperName}: ${rejectionReason}`);
+			this.collectScraperOutcome(outcome, scraperName, results, warnings);
 		});
 
 		results.sort((left, right) => left.pricePerUnit - right.pricePerUnit);
@@ -66,6 +57,24 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 			source: "live",
 			scrapedAt,
 		};
+	}
+
+	private collectScraperOutcome(
+		outcome: PromiseSettledResult<IProduct[]>,
+		scraperName: string,
+		results: IProduct[],
+		warnings: string[],
+	): void {
+		if (outcome.status === "fulfilled") {
+			results.push(...outcome.value);
+			return;
+		}
+
+		const rejectionReason = this.formatRejectionReason(outcome.reason);
+		this.logger.error(
+			`[TriggerManualScrapeUseCase] ${scraperName} rejected: ${rejectionReason}`,
+		);
+		warnings.push(`${scraperName}: ${rejectionReason}`);
 	}
 
 	private formatRejectionReason(reason: unknown): string {

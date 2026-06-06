@@ -19,14 +19,6 @@ import {
 } from "../strategies/StealthHelper";
 import { BrowserManager } from "../strategies/BrowserManager";
 
-/**
- * Carrefour Scraper — protected by Akamai/Datadome bot detection.
- *
- * Strategy:
- *  - Stealth browser context with random user-agent.
- *  - Human-like sequential navigation (home -> cookie consent -> regional cookie -> search).
- *  - If blocked/intercepted (timeout/selector issues), persist visual debug artifacts and rethrow.
- */
 export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Carrefour";
 	private readonly productMapper: ProductMapper;
@@ -60,27 +52,7 @@ export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 				logger.debug(`[Carrefour] Sample doc: ${JSON.stringify(docs[0])}`);
 			}
 
-			return Promise.all(
-				docs.map(async (doc) => {
-					const name = doc.display_name || doc.name || "Producto Carrefour";
-					const priceRaw =
-						doc.active_price || doc.app_price || doc.list_price || 0;
-					const image =
-						doc.image_path || doc.image || doc.image_url || undefined;
-					const category = await categorize(name);
-
-					return this.productMapper.toDomain({
-						supermarket: this.name,
-						name,
-						category,
-						priceRaw,
-						quantityRaw: doc.price_per_unit_text || "1 ud",
-						image: image || undefined,
-						url: doc.url ? `https://www.carrefour.es${doc.url}` : undefined,
-						taxHint: name,
-					});
-				}),
-			);
+			return Promise.all(docs.map((doc) => this.buildProductFromSearchDoc(doc)));
 		} catch (error) {
 			if (this.shouldCaptureDebugArtifacts(error)) {
 				await this.captureDebugArtifacts(page, query);
@@ -92,6 +64,24 @@ export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 			await page.close();
 			await context.close();
 		}
+	}
+
+	private async buildProductFromSearchDoc(doc: CarrefourSearchDoc): Promise<IProduct> {
+		const name = doc.display_name ?? doc.name ?? "Producto Carrefour";
+		const priceRaw = doc.active_price ?? doc.app_price ?? doc.list_price ?? 0;
+		const image = doc.image_path ?? doc.image ?? doc.image_url ?? undefined;
+		const category = await categorize(name);
+
+		return this.productMapper.toDomain({
+			supermarket: this.name,
+			name,
+			category,
+			priceRaw,
+			quantityRaw: doc.price_per_unit_text ?? "1 ud",
+			image,
+			url: doc.url ? `https://www.carrefour.es${doc.url}` : undefined,
+			taxHint: name,
+		});
 	}
 
 	private async navigateLikeHuman(

@@ -4,10 +4,11 @@ import type { ShoppingSessionRepository } from "@application/ports/outgoing/Shop
 import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
 import type {
 	SaveShoppingSessionInput,
+	SaveShoppingSessionItemInput,
 	SaveShoppingSessionResult,
 } from "./contracts";
 import { ShoppingSessionTotalCalculator } from "@domain/services/ShoppingSessionTotalCalculator";
-import type { ShoppingSession } from "@domain/entities/ShoppingSession";
+import type { ShoppingSession, ShoppingSessionItem } from "@domain/entities/ShoppingSession";
 
 export class SaveShoppingSessionUseCase implements SaveShoppingSessionUseCasePort {
 	constructor(
@@ -38,18 +39,7 @@ export class SaveShoppingSessionUseCase implements SaveShoppingSessionUseCasePor
 			shoppedAt,
 			totalPrice,
 			createdAt: new Date(),
-			items: input.items.map((item) => ({
-				productName: item.productName,
-				supermarket: item.supermarket,
-				category: item.category,
-				price: item.price,
-				pricePerUnit: item.pricePerUnit,
-				unit: item.unit,
-				taxType: item.taxType,
-				quantity: item.quantity,
-				image: item.image,
-				url: item.url,
-			})),
+			items: input.items.map((item) => this.mapInputItemToSessionItem(item)),
 		};
 
 		const savedSession = await this.shoppingSessionRepository.save(session);
@@ -62,6 +52,21 @@ export class SaveShoppingSessionUseCase implements SaveShoppingSessionUseCasePor
 			sessionId: savedSession.id,
 			totalPrice: savedSession.totalPrice,
 			itemCount: savedSession.items.length,
+		};
+	}
+
+	private mapInputItemToSessionItem(item: SaveShoppingSessionItemInput): ShoppingSessionItem {
+		return {
+			productName: item.productName,
+			supermarket: item.supermarket,
+			category: item.category,
+			price: item.price,
+			pricePerUnit: item.pricePerUnit,
+			unit: item.unit,
+			taxType: item.taxType,
+			quantity: item.quantity,
+			image: item.image,
+			url: item.url,
 		};
 	}
 }

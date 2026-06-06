@@ -13,19 +13,8 @@ export class PrismaShoppingSessionMapper {
 			shoppedAt: record.shoppedAt,
 			totalPrice: record.totalPrice,
 			createdAt: record.createdAt,
-			items: record.items.map(
-				(item): ShoppingSessionItem => ({
-					productName: item.productName,
-					supermarket: item.supermarket,
-					category: item.category,
-					price: item.price,
-					pricePerUnit: item.pricePerUnit,
-					unit: item.unit,
-					taxType: item.taxType,
-					quantity: item.quantity,
-					image: item.image ?? undefined,
-					url: item.url ?? undefined,
-				}),
+			items: record.items.map((item) =>
+				PrismaShoppingSessionMapper.mapPrismaSessionItemToDomain(item),
 			),
 		};
 	}
@@ -53,6 +42,23 @@ export class PrismaShoppingSessionMapper {
 					url: item.url,
 				})),
 			},
+		};
+	}
+
+	private static mapPrismaSessionItemToDomain(
+		item: PrismaShoppingSessionItem,
+	): ShoppingSessionItem {
+		return {
+			productName: item.productName,
+			supermarket: item.supermarket,
+			category: item.category,
+			price: item.price,
+			pricePerUnit: item.pricePerUnit,
+			unit: item.unit,
+			taxType: item.taxType,
+			quantity: item.quantity,
+			image: item.image ?? undefined,
+			url: item.url ?? undefined,
 		};
 	}
 }

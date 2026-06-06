@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { MergeCartUseCasePort } from "@application/ports/incoming/MergeCartUseCasePort";
 import type { ActiveCartRepository } from "@application/ports/outgoing/ActiveCartRepository";
 import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
-import type { MergeCartInput, MergeCartItemInput, MergeCartResult } from "./contracts";
+import type { MergeCartInput, MergeCartItemInput, MergeCartResult, MergeCartResultItem } from "./contracts";
 import { ActiveCartMerger } from "@domain/services/ActiveCartMerger";
 import type { ActiveCart, ActiveCartItem } from "@domain/entities/ActiveCart";
 
@@ -59,19 +59,25 @@ export class MergeCartUseCase implements MergeCartUseCasePort {
 			cartId: cart.id,
 			userId: cart.userId,
 			totalItems: cart.items.length,
-			items: cart.items.map((item: ActiveCartItem) => ({
-				productId: item.productId,
-				productName: item.productName,
-				supermarket: item.supermarket,
-				category: item.category,
-				price: item.price,
-				pricePerUnit: item.pricePerUnit,
-				unit: item.unit,
-				taxType: item.taxType,
-				quantity: item.quantity,
-				image: item.image,
-				url: item.url,
-			})),
+			items: cart.items.map((item: ActiveCartItem) =>
+				MergeCartUseCase.mapCartItemToResultItem(item),
+			),
+		};
+	}
+
+	private static mapCartItemToResultItem(item: ActiveCartItem): MergeCartResultItem {
+		return {
+			productId: item.productId,
+			productName: item.productName,
+			supermarket: item.supermarket,
+			category: item.category,
+			price: item.price,
+			pricePerUnit: item.pricePerUnit,
+			unit: item.unit,
+			taxType: item.taxType,
+			quantity: item.quantity,
+			image: item.image,
+			url: item.url,
 		};
 	}
 }

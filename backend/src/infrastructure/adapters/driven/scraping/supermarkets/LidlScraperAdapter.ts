@@ -14,10 +14,7 @@ import {
 	randomDelay,
 } from "../strategies/StealthHelper";
 
-/**
- * Lidl Scraper — best-effort. Lidl ES has limited Canary Islands catalog.
- * Targets the ES online shop and filters by search query.
- */
+
 export class LidlScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Lidl";
 	private readonly productMapper: ProductMapper;
@@ -93,26 +90,27 @@ export class LidlScraperAdapter extends PlaywrightScraperAdapterBase {
 				return results;
 			});
 
+			const productsWithNameAndPrice = rawProducts.filter((p) => p.name && p.price);
 			return Promise.all(
-				rawProducts
-					.filter((p) => p.name && p.price)
-					.map(async (p) => {
-						const category = await categorize(p.name);
-						return this.productMapper.toDomain({
-							supermarket: this.name,
-							name: p.name,
-							category,
-							priceRaw: p.price,
-							quantityRaw: p.unit,
-							image: p.image || undefined,
-							url: p.link || undefined,
-							taxHint: p.name,
-						});
-					}),
+				productsWithNameAndPrice.map((p) => this.buildProductFromRawItem(p)),
 			);
 		} finally {
 			await page.close();
 			await context.close();
 		}
+	}
+
+	private async buildProductFromRawItem(item: LidlRawProduct): Promise<IProduct> {
+		const category = await categorize(item.name);
+		return this.productMapper.toDomain({
+			supermarket: this.name,
+			name: item.name,
+			category,
+			priceRaw: item.price,
+			quantityRaw: item.unit,
+			image: item.image || undefined,
+			url: item.link || undefined,
+			taxHint: item.name,
+		});
 	}
 }
