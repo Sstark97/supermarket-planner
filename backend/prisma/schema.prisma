@@ -85,3 +85,12 @@ model ActiveCartItem {
   @@unique([cartId, supermarket, productName])
   @@index([cartId])
 }
+
+model ProductCategoryCache {
+  id             String   @id @default(uuid())
+  normalizedName String   @unique
+  category       String
+  createdAt      DateTime @default(now())
+
+  @@index([normalizedName])
+}

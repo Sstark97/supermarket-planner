@@ -4,7 +4,7 @@ import { BrowserManager } from "@infrastructure/adapters/driven/scraping/strateg
 import { logger } from "@infrastructure/logging/logger";
 
 async function bootstrap() {
-	const { app, scrapers, scraperCron } =
+	const { app, scrapers, scraperCron, categorizationCron } =
 		BackendCompositionBootstrap.createApplication();
 
 	logger.info("Warming up Playwright Chromium browser...");
@@ -12,6 +12,7 @@ async function bootstrap() {
 	logger.info("Browser ready.");
 
 	scraperCron.start();
+	categorizationCron.start();
 
 	app.listen(config.port, () => {
 		logger.info(

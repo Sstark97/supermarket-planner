@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ProductCategory } from "@domain/entities/IProduct";
 import type { AiCategorizer } from "@application/ports/outgoing/AiCategorizer";
+import { CATEGORY_DEFINITIONS } from "./categoryPromptDefinitions";
 
 interface GeminiLikeModel {
 	generateContent(prompt: string): Promise<{ response: { text(): string } }>;
@@ -49,12 +50,7 @@ export class GeminiAiCategorizer implements AiCategorizer {
 		try {
 			const client = this.clientFactory(this.apiKey);
 			const model = client.getGenerativeModel({ model: this.model });
-			const categories = Object.values(ProductCategory).join(", ");
-			const prompt =
-				`You are a supermarket product categorizer. ` +
-				`Given the following product name in Spanish, classify it into exactly one of these categories: ${categories}. ` +
-				`Reply with ONLY the category value, nothing else.\n\n` +
-				`Product: "${productName}"`;
+			const prompt = this.buildCategorizationPrompt(productName);
 
 			const result = await model.generateContent(prompt);
 			const normalized = result.response.text().trim().toLowerCase();
@@ -70,5 +66,16 @@ export class GeminiAiCategorizer implements AiCategorizer {
 			);
 			return undefined;
 		}
+	}
+
+	private buildCategorizationPrompt(productName: string): string {
+		const categories = Object.values(ProductCategory).join(", ");
+		return (
+			`You are a supermarket product categorizer for a Spanish supermarket. ` +
+			`Given the following product name in Spanish, classify it into exactly one of these categories: ${categories}. ` +
+			`Reply with ONLY the category value, nothing else.\n\n` +
+			`${CATEGORY_DEFINITIONS}\n\n` +
+			`Product: "${productName}"`
+		);
 	}
 }

@@ -8,12 +8,16 @@ import { GetShoppingSessionsUseCase } from "@application/use-cases/shopping-sess
 import { DeleteShoppingSessionUseCase } from "@application/use-cases/shopping-session/DeleteShoppingSessionUseCase";
 import { GetShoppingSessionMetricsUseCase } from "@application/use-cases/shopping-session/GetShoppingSessionMetricsUseCase";
 import { MergeCartUseCase } from "@application/use-cases/active-cart/MergeCartUseCase";
+import { CategorizePendingProductsUseCase } from "@application/use-cases/categorization/CategorizePendingProductsUseCase";
 import { SearchController } from "@infrastructure/adapters/driving/http/SearchController";
 import { ShoppingSessionController } from "@infrastructure/adapters/driving/http/ShoppingSessionController";
 import { ActiveCartController } from "@infrastructure/adapters/driving/http/ActiveCartController";
+import { AdminCategorizationController } from "@infrastructure/adapters/driving/http/AdminCategorizationController";
 import { JwtAuthMiddleware } from "@infrastructure/adapters/driving/http/middleware/JwtAuthMiddleware";
 import { ScraperCron } from "@infrastructure/adapters/driving/cron/scraperCron";
+import { CategorizationCron } from "@infrastructure/adapters/driving/cron/CategorizationCron";
 import { PrismaProductRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaProductRepository";
+import { PrismaCategoryCacheRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaCategoryCacheRepository";
 import { PrismaShoppingSessionRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaShoppingSessionRepository";
 import { PrismaActiveCartRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaActiveCartRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "@infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
@@ -22,6 +26,7 @@ import { CarrefourScraperAdapter } from "@infrastructure/adapters/driven/scrapin
 import { HiperDinoScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
 import { LidlScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/LidlScraperAdapter";
 import { MercadonaScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/MercadonaScraperAdapter";
+import { GeminiAiBatchCategorizer } from "@infrastructure/adapters/driven/ai/GeminiAiBatchCategorizer";
 import { logger } from "@infrastructure/logging/logger";
 import { errorHandler } from "@infrastructure/adapters/driving/http/errorHandler";
 import { config } from "@infrastructure/config";
@@ -31,6 +36,7 @@ export interface BootstrappedBackendApplication {
 	app: Express;
 	scrapers: PlaywrightScraperAdapterBase[];
 	scraperCron: ScraperCron;
+	categorizationCron: CategorizationCron;
 }
 
 export class BackendCompositionBootstrap {
@@ -73,6 +79,25 @@ export class BackendCompositionBootstrap {
 			productCatalogRepository,
 		);
 
+		const categoryCacheRepository = new PrismaCategoryCacheRepository();
+		const aiBatchCategorizer = new GeminiAiBatchCategorizer({
+			apiKey: config.geminiApiKey,
+			model: config.geminiModel,
+			logger,
+		});
+		const categorizePendingProductsUseCase = new CategorizePendingProductsUseCase({
+			productCatalogRepository,
+			categoryCacheRepository,
+			aiBatchCategorizer,
+			logger,
+		});
+		const adminCategorizationController = new AdminCategorizationController(
+			categorizePendingProductsUseCase,
+		);
+		const categorizationCron = new CategorizationCron(
+			categorizePendingProductsUseCase,
+		);
+
 		const shoppingSessionRepository = new PrismaShoppingSessionRepository();
 		const saveShoppingSessionUseCase = new SaveShoppingSessionUseCase(
 			shoppingSessionRepository,
@@ -101,8 +126,8 @@ export class BackendCompositionBootstrap {
 
 		const jwtAuthMiddleware = new JwtAuthMiddleware(config.authSecret, logger);
 
-		app.get("/health", (_req, res) => {
-			res.json({
+		app.get("/health", (_request, response) => {
+			response.json({
 				status: "ok",
 				dbConnected: true,
 				scrapers: scrapers.map((scraper) => {
@@ -148,32 +173,37 @@ export class BackendCompositionBootstrap {
 			activeCartController.merge,
 		);
 
-		app.post("/admin/scrape/:query", async (req, res) => {
+		app.post("/admin/scrape/:query", async (request, response) => {
 			try {
-				const query = req.params.query;
+				const query = request.params.query;
 				logger.info(`Manual scrape triggered for: ${query}`);
 				const result = await triggerManualScrapeUseCase.execute({ query });
 				const savedProductsCount = await productCatalogRepository.save(
 					result.results,
 				);
 
-				res.json({
+				response.json({
 					message: `Scraped ${savedProductsCount} products for "${query}"`,
 					warnings: result.warnings,
 					sample: result.results.slice(0, 10),
 				});
 			} catch (error) {
 				logger.error("Manual scrape failed:", error);
-				res.status(500).json({ error: String(error) });
+				response.status(500).json({ error: String(error) });
 			}
 		});
 
-		app.post("/admin/scrape-all", (_req, res) => {
+		app.post("/admin/scrape-all", (_request, response) => {
 			scraperCron.runDailyScrape().catch((error) => {
 				logger.error("Manual scrape-all failed:", error);
 			});
-			res.json({ message: "Daily scrape full loop triggered in background." });
+			response.json({ message: "Daily scrape full loop triggered in background." });
 		});
+
+		app.post(
+			"/admin/categorize-pending",
+			adminCategorizationController.categorizePending,
+		);
 
 		app.use(errorHandler);
 
@@ -181,6 +211,7 @@ export class BackendCompositionBootstrap {
 			app,
 			scrapers,
 			scraperCron,
+			categorizationCron,
 		};
 	}
 }

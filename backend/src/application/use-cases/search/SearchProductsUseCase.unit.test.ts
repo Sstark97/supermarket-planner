@@ -39,6 +39,8 @@ function buildUseCase(
 	const productCatalogRepository: ProductCatalogRepository = {
 		find: vi.fn().mockResolvedValue(products),
 		save: vi.fn().mockResolvedValue(0),
+		findByCategory: vi.fn().mockResolvedValue([]),
+		updateCategoryByNormalizedNames: vi.fn().mockResolvedValue(0),
 	};
 
 	const backgroundRefreshQueue: BackgroundRefreshQueuePort = {

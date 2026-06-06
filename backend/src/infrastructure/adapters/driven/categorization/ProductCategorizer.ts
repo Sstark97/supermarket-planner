@@ -3,6 +3,7 @@ import { logger } from "@infrastructure/logging/logger";
 import { ProductCategorizationUseCase } from "@application/use-cases/categorization/ProductCategorizationUseCase";
 import { GeminiAiCategorizer } from "../ai/GeminiAiCategorizer";
 import { JsonKeywordCategorizer } from "./JsonKeywordCategorizer";
+import { PrismaCategoryCacheRepository } from "../persistence/prisma/PrismaCategoryCacheRepository";
 
 function createCategorizationUseCase(): ProductCategorizationUseCase {
 	const keywordCategorizer = new JsonKeywordCategorizer();
@@ -11,10 +12,12 @@ function createCategorizationUseCase(): ProductCategorizationUseCase {
 		model: config.geminiModel,
 		logger,
 	});
+	const categoryCache = new PrismaCategoryCacheRepository();
 
 	return new ProductCategorizationUseCase({
 		keywordCategorizer,
 		aiCategorizer,
+		categoryCache,
 		logger,
 		aiTimeoutMs: 1500,
 	});

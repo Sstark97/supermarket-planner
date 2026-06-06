@@ -7,7 +7,16 @@ export interface ProductCatalogFilters {
 	limit?: number;
 }
 
+export interface NormalizedNameCategoryUpdate {
+	normalizedName: string;
+	category: string;
+}
+
 export interface ProductCatalogRepository {
 	find(filters: ProductCatalogFilters): Promise<IProduct[]>;
 	save(products: IProduct[]): Promise<number>;
+	findByCategory(category: string): Promise<IProduct[]>;
+	updateCategoryByNormalizedNames(
+		updates: NormalizedNameCategoryUpdate[],
+	): Promise<number>;
 }
