@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
 	const requestBuilder = new ProductSearchRequestBuilder(
 		apiUrlPolicy.resolveApiUrl(),
 	);
-	const filters = mapper.parse(request.nextUrl.searchParams);
+	const searchParams = request.nextUrl.searchParams;
+	const filters = mapper.parse(searchParams);
 	const params = mapper.toSearchParams(filters);
 	const requestUrl = requestBuilder.buildUrl(params);
 	const allowedOrigins = new Set([

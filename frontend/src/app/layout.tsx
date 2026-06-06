@@ -7,6 +7,7 @@ import { CartSidebar } from "@/features/cart/components/CartSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ToastProvider } from "@/components/Toast";
+import { AppQueryClientProvider } from "@/components/providers/QueryClientProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,14 +31,16 @@ export default function RootLayout({
 			<body
 				className={`${inter.className} bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col`}
 			>
-				<SessionProvider>
-					<ToastProvider>
-						<Header />
-						<main className="flex-1 pb-16 md:pb-0">{children}</main>
-						<CartSidebar />
-						<MobileBottomNav />
-					</ToastProvider>
-				</SessionProvider>
+				<AppQueryClientProvider>
+					<SessionProvider>
+						<ToastProvider>
+							<Header />
+							<main className="flex-1 pb-16 md:pb-0">{children}</main>
+							<CartSidebar />
+							<MobileBottomNav />
+						</ToastProvider>
+					</SessionProvider>
+				</AppQueryClientProvider>
 			</body>
 		</html>
 	);

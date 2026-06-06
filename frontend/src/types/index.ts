@@ -17,6 +17,12 @@ export enum ProductCategory {
     OTHER = 'other',
 }
 
+export interface PaginatedProductSearchResult {
+	results: IProduct[];
+	nextCursor: string | null;
+	totalCount: number;
+}
+
 export interface IProduct {
     id: string;
     name: string;

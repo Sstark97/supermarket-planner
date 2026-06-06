@@ -1,12 +1,9 @@
 import { Suspense } from "react";
 import { CategoryFilterBar } from "@/features/product-search/components/CategoryFilterBar";
 import { FilterMenu } from "@/features/product-search/components/FilterMenu";
-import {
-	ProductGrid,
-	ProductGridSkeleton,
-} from "@/features/product-search/components/ProductGrid";
+import { ProductGridSkeleton } from "@/features/product-search/components/ProductGrid";
+import { ProductGridContainer } from "@/features/product-search/components/ProductGridContainer";
 import { ProductSearchFiltersMapper } from "@/features/product-search/model/filters";
-import { createServerContainer } from "@/lib/di/ContainerDI";
 
 export default async function Home({
 	searchParams,
@@ -17,9 +14,6 @@ export default async function Home({
 	const { query, category, supermarket, sortBy } = searchFiltersMapper.parse(
 		await searchParams,
 	);
-
-	const container = await createServerContainer();
-	const productGateway = container.resolveProductGateway();
 
 	return (
 		<div className="flex flex-col min-h-full">
@@ -46,16 +40,9 @@ export default async function Home({
 				</div>
 
 				<Suspense
-					key={`${query}-${category}-${supermarket}-${sortBy}`}
 					fallback={<ProductGridSkeleton />}
 				>
-					<ProductGrid
-						productGateway={productGateway}
-						query={query}
-						category={category}
-						supermarket={supermarket}
-						sortBy={sortBy}
-					/>
+					<ProductGridContainer />
 				</Suspense>
 			</div>
 		</div>
