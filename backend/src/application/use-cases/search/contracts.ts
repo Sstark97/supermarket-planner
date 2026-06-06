@@ -5,6 +5,8 @@ export interface SearchProductsInput {
 	category?: string;
 	supermarket?: string;
 	sortBy?: "price_asc" | "price_desc";
+	limit?: number;
+	cursor?: string;
 }
 
 export interface TriggerManualScrapeInput {
@@ -16,6 +18,7 @@ export interface SearchResult {
 	results: IProduct[];
 	warnings: string[];
 	totalCount: number;
+	nextCursor: string | null;
 	source: "database" | "live";
 	scrapedAt: string;
 	isRefreshing?: boolean;

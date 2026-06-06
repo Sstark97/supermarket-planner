@@ -7,6 +7,8 @@ const searchQuerySchema = z.object({
 	category: z.string().optional(),
 	supermarket: z.string().optional(),
 	sortBy: z.enum(["price_asc", "price_desc"]).optional(),
+	limit: z.coerce.number().int().min(1).max(100).default(20),
+	cursor: z.string().regex(/^\d+$/, "cursor must be a non-negative integer string").optional(),
 });
 
 export class SearchController {
@@ -28,12 +30,14 @@ export class SearchController {
 		}
 
 		try {
-			const { q, category, supermarket, sortBy } = parseResult.data;
+			const { q, category, supermarket, sortBy, limit, cursor } = parseResult.data;
 			const result = await this.searchProductsUseCase.execute({
 				query: q,
 				category,
 				supermarket,
 				sortBy,
+				limit,
+				cursor,
 			});
 
 			response.json(result);

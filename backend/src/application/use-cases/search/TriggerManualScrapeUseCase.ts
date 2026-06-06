@@ -54,6 +54,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 			results,
 			warnings,
 			totalCount: results.length,
+			nextCursor: null,
 			source: "live",
 			scrapedAt,
 		};

@@ -6,6 +6,8 @@ import type { IProduct } from "@domain/entities/IProduct";
 import type { SearchProductsInput, SearchResult } from "./contracts";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_PAGE_LIMIT = 20;
+const MAX_PAGE_LIMIT = 100;
 
 export class SearchProductsUseCase implements SearchProductsUseCasePort {
 	constructor(
@@ -41,16 +43,37 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 			? this.backgroundRefreshQueue.enqueue(normalizedQuery)
 			: false;
 
+		const effectiveLimit = Math.min(input.limit ?? DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT);
+		const { pageSlice, nextCursor, totalCount } = this.applyPaginationWindow(
+			sortedProducts,
+			input.cursor,
+			effectiveLimit,
+		);
+
 		return {
 			query: normalizedQuery,
-			results: sortedProducts,
+			results: pageSlice,
 			warnings: [],
-			totalCount: sortedProducts.length,
+			totalCount,
+			nextCursor,
 			source: "database",
 			scrapedAt: new Date().toISOString(),
 			isRefreshing: isRefreshing || undefined,
 			refreshReason: isRefreshing ? refreshDecision.refreshReason : undefined,
 		};
+	}
+
+	private applyPaginationWindow(
+		products: IProduct[],
+		cursor: string | undefined,
+		limit: number,
+	): { pageSlice: IProduct[]; nextCursor: string | null; totalCount: number } {
+		const totalCount = products.length;
+		const parsedOffset = cursor !== undefined ? parseInt(cursor, 10) : 0;
+		const offset = Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
+		const pageSlice = products.slice(offset, offset + limit);
+		const nextCursor = offset + limit < totalCount ? String(offset + limit) : null;
+		return { pageSlice, nextCursor, totalCount };
 	}
 
 	private normalizeProductName(name: string): string {
