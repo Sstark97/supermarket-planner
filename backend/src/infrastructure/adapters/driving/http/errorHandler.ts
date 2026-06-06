@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from '@infrastructure/logging/logger';
 
 export function errorHandler(
-    err: Error,
-    _req: Request,
-    res: Response,
-    _next: NextFunction,
+    error: Error,
+    _request: Request,
+    response: Response,
+    _nextMiddleware: NextFunction,
 ): void {
-    logger.error(`Unhandled error: ${err.message}\n${err.stack}`);
-    res.status(500).json({
+    logger.error(`Unhandled error: ${error.message}\n${error.stack}`);
+    response.status(500).json({
         error: 'Internal Server Error',
-        message: err.message,
+        message: error.message,
     });
 }

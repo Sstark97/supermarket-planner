@@ -26,14 +26,14 @@ export class ActiveCartController {
 	constructor(private readonly mergeCartUseCase: MergeCartUseCasePort) {}
 
 	merge = async (
-		req: Request,
-		res: Response,
+		request: Request,
+		response: Response,
 		next: NextFunction,
 	): Promise<void> => {
-		const parseResult = mergeCartBodySchema.safeParse(req.body);
+		const parseResult = mergeCartBodySchema.safeParse(request.body);
 
 		if (!parseResult.success) {
-			res.status(400).json({
+			response.status(400).json({
 				error: "Invalid request body",
 				details: parseResult.error.flatten().fieldErrors,
 			});
@@ -41,9 +41,9 @@ export class ActiveCartController {
 		}
 
 		try {
-			const userId: unknown = res.locals.userId;
-			if (typeof userId !== "string" || userId.length === 0) {
-				res.status(401).json({ error: "Unauthorized" });
+			const userId: unknown = response.locals.userId;
+			if (!this.isValidUserId(userId)) {
+				response.status(401).json({ error: "Unauthorized" });
 				return;
 			}
 
@@ -54,9 +54,13 @@ export class ActiveCartController {
 				items,
 			});
 
-			res.status(200).json(result);
+			response.status(200).json(result);
 		} catch (error) {
 			next(error);
 		}
 	};
+
+	private isValidUserId(userId: unknown): userId is string {
+		return typeof userId === "string" && userId.length > 0;
+	}
 }

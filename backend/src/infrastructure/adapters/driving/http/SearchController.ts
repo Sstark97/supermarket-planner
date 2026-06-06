@@ -13,14 +13,14 @@ export class SearchController {
 	constructor(private readonly searchProductsUseCase: SearchProductsUseCasePort) {}
 
 	search = async (
-		req: Request,
-		res: Response,
+		request: Request,
+		response: Response,
 		next: NextFunction,
 	): Promise<void> => {
-		const parseResult = searchQuerySchema.safeParse(req.query);
+		const parseResult = searchQuerySchema.safeParse(request.query);
 
 		if (!parseResult.success) {
-			res.status(400).json({
+			response.status(400).json({
 				error: "Invalid query",
 				details: parseResult.error.flatten().fieldErrors,
 			});
@@ -36,7 +36,7 @@ export class SearchController {
 				sortBy,
 			});
 
-			res.json(result);
+			response.json(result);
 		} catch (error) {
 			next(error);
 		}

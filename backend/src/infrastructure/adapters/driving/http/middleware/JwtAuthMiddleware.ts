@@ -9,16 +9,16 @@ export class JwtAuthMiddleware {
 	) {}
 
 	authenticate = async (
-		req: Request,
-		res: Response,
+		request: Request,
+		response: Response,
 		next: NextFunction,
 	): Promise<void> => {
-		const authorizationHeader = req.headers.authorization;
+		const authorizationHeader = request.headers.authorization;
 		const isBearerFormat =
 			authorizationHeader?.startsWith("Bearer ") === true;
 
 		if (!authorizationHeader || !isBearerFormat) {
-			res.status(401).json({ error: "Missing or malformed Authorization header." });
+			response.status(401).json({ error: "Missing or malformed Authorization header." });
 			return;
 		}
 
@@ -30,15 +30,15 @@ export class JwtAuthMiddleware {
 
 			const userId = payload.sub;
 			if (!userId) {
-				res.status(401).json({ error: "Token payload is missing sub claim." });
+				response.status(401).json({ error: "Token payload is missing sub claim." });
 				return;
 			}
 
-			res.locals.userId = userId;
+			response.locals.userId = userId;
 			next();
-		} catch (err) {
-			this.logger.error(`[JwtAuthMiddleware] verification failed: ${String(err)}`);
-			res.status(401).json({ error: "Invalid or expired token." });
+		} catch (error) {
+			this.logger.error(`[JwtAuthMiddleware] verification failed: ${String(error)}`);
+			response.status(401).json({ error: "Invalid or expired token." });
 		}
 	};
 }
