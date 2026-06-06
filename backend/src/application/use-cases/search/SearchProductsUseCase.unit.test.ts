@@ -132,3 +132,86 @@ describe("SearchProductsUseCase.execute", () => {
 		expect(result.refreshReason).toBeUndefined();
 	});
 });
+
+describe("SearchProductsUseCase pagination", () => {
+	function makeDistinctProducts(count: number): IProduct[] {
+		return Array.from({ length: count }, (_, index) =>
+			makeProduct({
+				name: `Product ${index + 1}`,
+				supermarket: `Store ${index + 1}`,
+				price: index + 1,
+				pricePerUnit: index + 1,
+			}),
+		);
+	}
+
+	it("should return first 20 products and nextCursor when no cursor is provided", async () => {
+		const products = makeDistinctProducts(35);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product" });
+
+		expect(result.results).toHaveLength(20);
+		expect(result.nextCursor).toBe("20");
+	});
+
+	it("should return correct page slice when cursor is provided", async () => {
+		const products = makeDistinctProducts(35);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product", cursor: "20" });
+
+		expect(result.results).toHaveLength(15);
+		expect(result.results[0].name).toBe("Product 21");
+	});
+
+	it("should return null nextCursor when on the last page", async () => {
+		const products = makeDistinctProducts(20);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product" });
+
+		expect(result.results).toHaveLength(20);
+		expect(result.nextCursor).toBeNull();
+	});
+
+	it("should respect a custom limit parameter", async () => {
+		const products = makeDistinctProducts(50);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product", limit: 10 });
+
+		expect(result.results).toHaveLength(10);
+		expect(result.nextCursor).toBe("10");
+	});
+
+	it("should cap limit at 100", async () => {
+		const products = makeDistinctProducts(150);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product", limit: 200 });
+
+		expect(result.results).toHaveLength(100);
+		expect(result.nextCursor).toBe("100");
+	});
+
+	it("should set totalCount to the full deduplicated set size, not the page slice size", async () => {
+		const products = makeDistinctProducts(35);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product", limit: 10 });
+
+		expect(result.results).toHaveLength(10);
+		expect(result.totalCount).toBe(35);
+	});
+
+	it("should treat a non-numeric cursor as offset 0", async () => {
+		const products = makeDistinctProducts(30);
+		const { useCase } = buildUseCase(products);
+
+		const result = await useCase.execute({ query: "product", cursor: "abc" });
+
+		expect(result.results).toHaveLength(20);
+		expect(result.nextCursor).toBe("20");
+	});
+});
