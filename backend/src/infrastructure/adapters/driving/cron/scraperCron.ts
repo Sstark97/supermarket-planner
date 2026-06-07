@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { logger } from "@infrastructure/logging/logger";
 import type { TriggerManualScrapeUseCasePort } from "@application/ports/incoming/TriggerManualScrapeUseCasePort";
 import type { ProductCatalogRepository } from "@application/ports/outgoing/ProductCatalogRepository";
+import { config } from "@infrastructure/config";
 
 // Essential weekly shopping queries to track broadly
 const CRON_QUERIES = [
@@ -54,6 +55,7 @@ export class ScraperCron {
 				});
 				const savedProductsCount = await this.productCatalogRepository.save(
 					result.results,
+					config.postalCode,
 				);
 				totalProductsSaved += savedProductsCount;
 

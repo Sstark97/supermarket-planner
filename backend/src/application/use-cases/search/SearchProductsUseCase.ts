@@ -3,6 +3,7 @@ import type { ProductCatalogRepository } from "@application/ports/outgoing/Produ
 import type { BackgroundRefreshQueuePort } from "@application/ports/outgoing/BackgroundRefreshQueuePort";
 import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
 import type { IProduct } from "@domain/entities/IProduct";
+import { PostalCode } from "@domain/value-objects/PostalCode";
 import type { SearchProductsInput, SearchResult } from "./contracts";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -22,10 +23,12 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 		);
 
 		const normalizedQuery = input.query?.trim() ?? "";
+		const effectivePostalCode = input.postalCode ?? PostalCode.DEFAULT.value;
 		const catalogProducts = await this.productCatalogRepository.find({
 			query: normalizedQuery,
 			category: input.category,
 			supermarket: input.supermarket,
+			postalCode: effectivePostalCode,
 			limit: 500,
 		});
 
@@ -40,7 +43,7 @@ export class SearchProductsUseCase implements SearchProductsUseCasePort {
 		);
 
 		const isRefreshing = refreshDecision.shouldRefresh
-			? this.backgroundRefreshQueue.enqueue(normalizedQuery)
+			? this.backgroundRefreshQueue.enqueue(normalizedQuery, effectivePostalCode)
 			: false;
 
 		const effectiveLimit = Math.min(input.limit ?? DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT);

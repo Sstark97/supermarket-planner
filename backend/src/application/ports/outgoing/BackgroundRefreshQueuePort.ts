@@ -1,3 +1,3 @@
 export interface BackgroundRefreshQueuePort {
-	enqueue(query: string): boolean;
+	enqueue(query: string, postalCode: string): boolean;
 }

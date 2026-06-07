@@ -1,11 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import type { SearchProductsUseCasePort } from "@application/ports/incoming/SearchProductsUseCasePort";
+import { config } from "@infrastructure/config";
 
 const searchQuerySchema = z.object({
 	q: z.string().max(100).optional(),
 	category: z.string().optional(),
 	supermarket: z.string().optional(),
+	postalCode: z.string().regex(/^\d{5}$/, "postalCode must be a 5-digit string").optional(),
 	sortBy: z.enum(["price_asc", "price_desc"]).optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(20),
 	cursor: z.string().regex(/^\d+$/, "cursor must be a non-negative integer string").optional(),
@@ -30,11 +32,13 @@ export class SearchController {
 		}
 
 		try {
-			const { q, category, supermarket, sortBy, limit, cursor } = parseResult.data;
+			const { q, category, supermarket, postalCode, sortBy, limit, cursor } =
+				parseResult.data;
 			const result = await this.searchProductsUseCase.execute({
 				query: q,
 				category,
 				supermarket,
+				postalCode: postalCode ?? config.postalCode,
 				sortBy,
 				limit,
 				cursor,

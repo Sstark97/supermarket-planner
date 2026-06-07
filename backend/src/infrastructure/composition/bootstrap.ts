@@ -64,8 +64,8 @@ export class BackendCompositionBootstrap {
 			logger,
 		);
 		const backgroundRefreshQueue = new InMemoryBackgroundRefreshQueueAdapter(
-			async (query) => {
-				await refreshProductsCatalogUseCase.execute({ query });
+			async (query, postalCode) => {
+				await refreshProductsCatalogUseCase.execute({ query, postalCode });
 			},
 		);
 		const searchProductsUseCase = new SearchProductsUseCase(
@@ -180,6 +180,7 @@ export class BackendCompositionBootstrap {
 				const result = await triggerManualScrapeUseCase.execute({ query });
 				const savedProductsCount = await productCatalogRepository.save(
 					result.results,
+					config.postalCode,
 				);
 
 				response.json({

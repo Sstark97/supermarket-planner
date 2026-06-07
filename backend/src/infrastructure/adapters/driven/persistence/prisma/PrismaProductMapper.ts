@@ -3,56 +3,97 @@ import type { IProduct } from "@domain/entities/IProduct";
 import { ProductCategory } from "@domain/entities/IProduct";
 import { buildProductSku } from "@domain/services/ProductIdentity";
 
-const prismaProductRecordSchema = z.object({
+const productPriceRecordSchema = z.object({
+	price: z.number(),
+	pricePerUnit: z.number(),
+	scrapedAt: z.date(),
+});
+
+const prismaProductWithPriceRecordSchema = z.object({
 	id: z.string(),
 	name: z.string().min(1),
 	supermarket: z.string().min(1),
 	category: z.nativeEnum(ProductCategory),
-	price: z.number(),
-	pricePerUnit: z.number(),
 	unit: z.string().min(1),
 	image: z.string().nullable(),
 	url: z.string().nullable(),
 	taxType: z.enum(["IGIC", "IVA", "UNKNOWN"]),
-	scrapedAt: z.date(),
+	prices: z.array(productPriceRecordSchema).min(1),
 });
 
-type PrismaProductRecord = z.infer<typeof prismaProductRecordSchema>;
+type PrismaProductWithPriceRecord = z.infer<
+	typeof prismaProductWithPriceRecordSchema
+>;
 
-export function parsePrismaProductRecord(record: unknown) {
-	return prismaProductRecordSchema.safeParse(record);
+export interface ProductBaseUpsertPayload {
+	where: { supermarket_sku: { supermarket: string; sku: string } };
+	update: {
+		name: string;
+		category: string;
+		unit: string;
+		image: string | undefined;
+		url: string | undefined;
+		taxType: string;
+	};
+	create: {
+		name: string;
+		category: string;
+		unit: string;
+		image: string | undefined;
+		url: string | undefined;
+		taxType: string;
+		supermarket: string;
+		sku: string;
+	};
 }
 
-export function mapPrismaProductRecordToDomain(
-	record: PrismaProductRecord,
+export interface ProductPriceUpsertPayload {
+	where: { productId_postalCode: { productId: string; postalCode: string } };
+	update: { price: number; pricePerUnit: number; scrapedAt: Date };
+	create: {
+		price: number;
+		pricePerUnit: number;
+		scrapedAt: Date;
+		postalCode: string;
+		productId: string;
+	};
+}
+
+export function parsePrismaProductWithPriceRecord(record: unknown) {
+	return prismaProductWithPriceRecordSchema.safeParse(record);
+}
+
+export function mapPrismaProductWithPriceToDomain(
+	record: PrismaProductWithPriceRecord,
 ): IProduct {
+	const [priceForRequestedPostalCode] = record.prices;
+
 	return {
 		id: record.id,
 		name: record.name,
 		supermarket: record.supermarket,
 		category: record.category,
-		price: record.price,
-		pricePerUnit: record.pricePerUnit,
+		price: priceForRequestedPostalCode.price,
+		pricePerUnit: priceForRequestedPostalCode.pricePerUnit,
 		unit: record.unit,
 		image: record.image ?? undefined,
 		url: record.url ?? undefined,
 		taxType: record.taxType,
-		scrapedAt: record.scrapedAt.toISOString(),
+		scrapedAt: priceForRequestedPostalCode.scrapedAt.toISOString(),
 	};
 }
 
-export function mapDomainProductToPrismaUpsertPayload(product: IProduct) {
+export function mapDomainProductToBaseUpsertPayload(
+	product: IProduct,
+): ProductBaseUpsertPayload {
 	const sku = buildProductSku(product);
 	const persistedFields = {
 		name: product.name,
 		category: product.category,
-		price: product.price,
-		pricePerUnit: product.pricePerUnit,
 		unit: product.unit,
 		image: product.image,
 		url: product.url,
 		taxType: product.taxType,
-		scrapedAt: new Date(product.scrapedAt),
 	};
 
 	return {
@@ -67,6 +108,33 @@ export function mapDomainProductToPrismaUpsertPayload(product: IProduct) {
 			...persistedFields,
 			supermarket: product.supermarket,
 			sku,
+		},
+	};
+}
+
+export function mapDomainProductToPriceUpsertPayload(
+	product: IProduct,
+	productId: string,
+	postalCode: string,
+): ProductPriceUpsertPayload {
+	const persistedFields = {
+		price: product.price,
+		pricePerUnit: product.pricePerUnit,
+		scrapedAt: new Date(product.scrapedAt),
+	};
+
+	return {
+		where: {
+			productId_postalCode: {
+				productId,
+				postalCode,
+			},
+		},
+		update: persistedFields,
+		create: {
+			...persistedFields,
+			postalCode,
+			productId,
 		},
 	};
 }
