@@ -5,6 +5,7 @@ export type ProductSearchFilters = {
 	sortBy?: string;
 	limit?: string;
 	cursor?: string;
+	postalCode?: string;
 };
 
 type SearchParamsObject = { [key: string]: string | string[] | undefined };
@@ -19,6 +20,7 @@ export class ProductSearchFiltersMapper {
 			sortBy: this.getValue(source, "sortBy"),
 			limit: this.getValue(source, "limit"),
 			cursor: this.getValue(source, "cursor"),
+			postalCode: this.getValue(source, "postalCode"),
 		};
 	}
 
@@ -31,6 +33,7 @@ export class ProductSearchFiltersMapper {
 		if (filters.sortBy) params.set("sortBy", filters.sortBy);
 		if (filters.limit) params.set("limit", filters.limit);
 		if (filters.cursor) params.set("cursor", filters.cursor);
+		if (filters.postalCode) params.set("postalCode", filters.postalCode);
 
 		return params;
 	}
