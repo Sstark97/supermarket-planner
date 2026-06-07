@@ -119,7 +119,7 @@ describe("SearchProductsUseCase.execute", () => {
 		const { useCase, backgroundRefreshQueue } = buildUseCase([], true);
 		const result = await useCase.execute({ query: "leche" });
 
-		expect(backgroundRefreshQueue.enqueue).toHaveBeenCalledWith("leche");
+		expect(backgroundRefreshQueue.enqueue).toHaveBeenCalledWith("leche", "35001");
 		expect(result.isRefreshing).toBe(true);
 		expect(result.refreshReason).toBe("empty");
 	});
