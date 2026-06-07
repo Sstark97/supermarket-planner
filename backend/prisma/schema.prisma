@@ -8,23 +8,35 @@ datasource db {
 }
 
 model Product {
-  id           String   @id @default(uuid())
-  name         String
-  supermarket  String
-  category     String
-  sku          String
-  price        Float
-  pricePerUnit Float
-  unit         String
-  image        String?
-  url          String?
-  taxType      String
-  scrapedAt    DateTime @default(now())
+  id          String         @id @default(uuid())
+  name        String
+  supermarket String
+  category    String
+  sku         String
+  unit        String
+  image       String?
+  url         String?
+  taxType     String
+  prices      ProductPrice[]
 
   @@unique([supermarket, sku])
   @@index([name])
   @@index([category])
   @@index([supermarket])
+}
+
+model ProductPrice {
+  id           String   @id @default(uuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  postalCode   String
+  price        Float
+  pricePerUnit Float
+  scrapedAt    DateTime @default(now())
+
+  @@unique([productId, postalCode])
+  @@index([postalCode])
+  @@index([productId])
 }
 
 model ShoppingSession {
