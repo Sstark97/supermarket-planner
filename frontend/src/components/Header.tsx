@@ -4,7 +4,8 @@ import { SearchBar } from "@/features/product-search/components/SearchBar";
 import { CartButton } from "@/features/cart/components/CartButton";
 import { ProductPageCategoriesToggleButton } from "@/features/product-search/components/ProductPageCategoriesToggleButton";
 import { LoginButton } from "./LoginButton";
-import { History, ShoppingBasket } from "lucide-react";
+import { KiloxLogo } from "./KiloxLogo";
+import { History } from "lucide-react";
 
 export function Header(): React.ReactElement {
 	return (
@@ -12,9 +13,7 @@ export function Header(): React.ReactElement {
 			<div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
 				{/* Logo */}
 				<Link href="/" className="flex items-center gap-2 group shrink-0">
-					<div className="bg-slate-900 p-2 rounded-xl group-hover:bg-slate-800 transition-colors">
-						<ShoppingBasket size={20} className="text-white" />
-					</div>
+					<KiloxLogo width={36} height={36} />
 					<span className="font-bold text-lg hidden sm:block tracking-tight text-slate-900">
 						Kilox
 						<span className="text-slate-400 font-medium">Market</span>
