@@ -23,18 +23,18 @@ function SkeletonCard(): React.ReactElement {
 		<div className="animate-pulse bg-white p-4 rounded-2xl border border-slate-100 h-64 flex flex-col justify-between">
 			<div>
 				<div className="flex justify-between mb-4">
-					<div className="h-6 w-20 bg-slate-200 rounded-md"></div>
-					<div className="h-4 w-16 bg-slate-100 rounded-md"></div>
+					<div className="h-6 w-20 bg-linear-to-r from-kilox-slate/30 to-kilox-cyan/10 rounded-md"></div>
+					<div className="h-4 w-16 bg-kilox-slate/20 rounded-md"></div>
 				</div>
-				<div className="h-4 w-3/4 bg-slate-200 rounded mb-2"></div>
-				<div className="h-4 w-1/2 bg-slate-100 rounded"></div>
+				<div className="h-4 w-3/4 bg-linear-to-r from-kilox-slate/30 to-kilox-cyan/10 rounded mb-2"></div>
+				<div className="h-4 w-1/2 bg-kilox-slate/20 rounded"></div>
 			</div>
 			<div className="flex justify-between mt-auto items-end pt-4">
 				<div>
-					<div className="h-6 w-16 bg-slate-200 rounded mb-1"></div>
-					<div className="h-3 w-24 bg-slate-100 rounded"></div>
+					<div className="h-6 w-16 bg-linear-to-r from-kilox-slate/30 to-kilox-cyan/10 rounded mb-1"></div>
+					<div className="h-3 w-24 bg-kilox-slate/20 rounded"></div>
 				</div>
-				<div className="h-8 w-16 bg-slate-800 rounded-xl"></div>
+				<div className="h-8 w-16 bg-kilox-gradient rounded-xl"></div>
 			</div>
 		</div>
 	);
