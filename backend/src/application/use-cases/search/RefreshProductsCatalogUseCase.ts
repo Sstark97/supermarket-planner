@@ -1,7 +1,7 @@
 import type { TriggerManualScrapeUseCasePort } from "@application/ports/incoming/TriggerManualScrapeUseCasePort";
 import type { ProductCatalogRepository } from "@application/ports/outgoing/ProductCatalogRepository";
 import type { LoggerPort } from "@application/ports/outgoing/LoggerPort";
-import type { TriggerManualScrapeInput } from "./contracts";
+import type { RefreshProductsCatalogInput } from "./contracts";
 
 export class RefreshProductsCatalogUseCase {
 	constructor(
@@ -10,15 +10,16 @@ export class RefreshProductsCatalogUseCase {
 		private readonly logger: LoggerPort,
 	) {}
 
-	async execute(input: TriggerManualScrapeInput): Promise<void> {
+	async execute(input: RefreshProductsCatalogInput): Promise<void> {
 		this.logger.info(
-			`[RefreshProductsCatalogUseCase] Background refresh started for query: "${input.query}"`,
+			`[RefreshProductsCatalogUseCase] Background refresh started for query: "${input.query}", postalCode: "${input.postalCode}"`,
 		);
 		const liveResult = await this.triggerManualScrapeHandler.execute({
 			query: input.query,
 		});
 		const savedProductsCount = await this.productCatalogRepository.save(
 			liveResult.results,
+			input.postalCode,
 		);
 
 		this.logger.info(

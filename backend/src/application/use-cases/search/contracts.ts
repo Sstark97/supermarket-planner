@@ -4,6 +4,7 @@ export interface SearchProductsInput {
 	query?: string;
 	category?: string;
 	supermarket?: string;
+	postalCode?: string;
 	sortBy?: "price_asc" | "price_desc";
 	limit?: number;
 	cursor?: string;
@@ -11,6 +12,11 @@ export interface SearchProductsInput {
 
 export interface TriggerManualScrapeInput {
 	query: string;
+}
+
+export interface RefreshProductsCatalogInput {
+	query: string;
+	postalCode: string;
 }
 
 export interface SearchResult {

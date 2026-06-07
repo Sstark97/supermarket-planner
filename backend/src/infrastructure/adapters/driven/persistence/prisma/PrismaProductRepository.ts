@@ -4,18 +4,21 @@ import type {
 	NormalizedNameCategoryUpdate,
 } from "@application/ports/outgoing/ProductCatalogRepository";
 import type { IProduct } from "@domain/entities/IProduct";
+import { PostalCode } from "@domain/value-objects/PostalCode";
 import { ProductNameNormalizer } from "@domain/services/ProductNameNormalizer";
 import { prisma } from "./prisma";
 import { logger } from "@infrastructure/logging/logger";
 import {
-	mapDomainProductToPrismaUpsertPayload,
-	mapPrismaProductRecordToDomain,
-	parsePrismaProductRecord,
+	mapDomainProductToBaseUpsertPayload,
+	mapDomainProductToPriceUpsertPayload,
+	mapPrismaProductWithPriceToDomain,
+	parsePrismaProductWithPriceRecord,
 } from "./PrismaProductMapper";
 
 export class PrismaProductRepository implements ProductCatalogRepository {
 	async find(filters: ProductCatalogFilters): Promise<IProduct[]> {
 		const normalizedQuery = filters.query?.trim();
+		const postalCode = filters.postalCode ?? PostalCode.DEFAULT.value;
 		const rawRows = await prisma.product.findMany({
 			where: {
 				...(normalizedQuery
@@ -28,6 +31,10 @@ export class PrismaProductRepository implements ProductCatalogRepository {
 					: {}),
 				...(filters.category ? { category: filters.category } : {}),
 				...(filters.supermarket ? { supermarket: filters.supermarket } : {}),
+				prices: { some: { postalCode } },
+			},
+			include: {
+				prices: { where: { postalCode } },
 			},
 			take: filters.limit ?? 500,
 		});
@@ -35,11 +42,14 @@ export class PrismaProductRepository implements ProductCatalogRepository {
 		return this.parseAndCollectValidProducts(rawRows);
 	}
 
-	async save(products: IProduct[]): Promise<number> {
+	async save(products: IProduct[], postalCode: string): Promise<number> {
 		let savedProductsCount = 0;
 		for (const product of products) {
-			await prisma.product.upsert(
-				mapDomainProductToPrismaUpsertPayload(product),
+			const savedProduct = await prisma.product.upsert(
+				mapDomainProductToBaseUpsertPayload(product),
+			);
+			await prisma.productPrice.upsert(
+				mapDomainProductToPriceUpsertPayload(product, savedProduct.id, postalCode),
 			);
 			savedProductsCount += 1;
 		}
@@ -48,8 +58,15 @@ export class PrismaProductRepository implements ProductCatalogRepository {
 	}
 
 	async findByCategory(category: string): Promise<IProduct[]> {
+		const postalCode = PostalCode.DEFAULT.value;
 		const rawRows = await prisma.product.findMany({
-			where: { category },
+			where: {
+				category,
+				prices: { some: { postalCode } },
+			},
+			include: {
+				prices: { where: { postalCode } },
+			},
 		});
 
 		return this.parseAndCollectValidProducts(rawRows);
@@ -58,14 +75,14 @@ export class PrismaProductRepository implements ProductCatalogRepository {
 	private parseAndCollectValidProducts(rawRecords: unknown[]): IProduct[] {
 		const validProducts: IProduct[] = [];
 		for (const row of rawRecords) {
-			const parsedRow = parsePrismaProductRecord(row);
+			const parsedRow = parsePrismaProductWithPriceRecord(row);
 			if (!parsedRow.success) {
 				logger.warn(
 					`[PrismaProductRepository] Skipping invalid product row ${(row as { id?: string }).id ?? "unknown-id"}: ${parsedRow.error.issues.map((issue) => issue.message).join(", ")}`,
 				);
 				continue;
 			}
-			validProducts.push(mapPrismaProductRecordToDomain(parsedRow.data));
+			validProducts.push(mapPrismaProductWithPriceToDomain(parsedRow.data));
 		}
 		return validProducts;
 	}
