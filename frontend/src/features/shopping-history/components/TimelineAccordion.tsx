@@ -128,15 +128,15 @@ function PurchaseEntryRow({
 		<li>
 			<button
 				onClick={() => onSelectSession(entry.sessionId)}
-				className={`w-full text-left p-2.5 rounded-lg border transition-colors ${
+				className={`w-full text-left p-2.5 rounded-lg border border-l-4 transition-colors ${
 					isSelected
-						? "border-slate-900 bg-slate-900 text-white"
-						: "border-slate-200 hover:border-slate-300"
+						? "border-l-kilox-cyan border-slate-200 bg-slate-50 text-slate-900"
+						: "border-l-transparent border-slate-200 hover:border-slate-300"
 				}`}
 			>
 				<p className="text-sm font-semibold">{entry.totalPrice.toFixed(2)}€</p>
 				<p
-					className={`text-xs ${isSelected ? "text-white/80" : "text-slate-500"}`}
+					className={`text-xs ${isSelected ? "text-kilox-sapphire" : "text-slate-500"}`}
 				>
 					{dateFormatter.formatCalendarDate(entry.shoppedAt)} ·{" "}
 					{purchasedUnitsCount} uds
