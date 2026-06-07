@@ -7,6 +7,7 @@ import { useInfiniteProductSearch } from "@/features/product-search/hooks/useInf
 import { IProduct } from "@/types";
 import { ProductGateway } from "@/lib/http/ProductGateway";
 import { ClientContainerDI } from "@/lib/di/ClientContainerDI";
+import { useLocationStore } from "@/store/locationStore";
 import { ProductGrid, ProductGridSkeleton, ProductGridBatchSkeleton } from "./ProductGrid";
 import { ScrollSentinel } from "./ScrollSentinel";
 import { EndOfResultsFooter } from "./EndOfResultsFooter";
@@ -60,7 +61,11 @@ function RefreshingIndicator(): React.ReactElement {
 export function ProductGridContainer(): React.ReactElement {
 	const [gateway] = useState<ProductGateway>(() => new ClientContainerDI().resolveProductGateway());
 	const searchParams = useSearchParams();
-	const filters = filtersMapper.parse(searchParams);
+	const postalCode = useLocationStore((state) => state.postalCode);
+	const filters = {
+		...filtersMapper.parse(searchParams),
+		...(postalCode ? { postalCode } : {}),
+	};
 
 	const {
 		data,

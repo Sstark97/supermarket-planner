@@ -5,6 +5,7 @@ import { CartButton } from "@/features/cart/components/CartButton";
 import { ProductPageCategoriesToggleButton } from "@/features/product-search/components/ProductPageCategoriesToggleButton";
 import { LoginButton } from "./LoginButton";
 import { KiloxLogo } from "./KiloxLogo";
+import { LocationSelector } from "./LocationSelector";
 import { History } from "lucide-react";
 
 export function Header(): React.ReactElement {
@@ -19,6 +20,8 @@ export function Header(): React.ReactElement {
 						<span className="text-slate-400 font-medium">Market</span>
 					</span>
 				</Link>
+
+				<LocationSelector />
 
 				{/* Search Bar — full width on mobile, constrained on desktop */}
 				<div className="flex-1 w-full max-w-2xl mx-auto">

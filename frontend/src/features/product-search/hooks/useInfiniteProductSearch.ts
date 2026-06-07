@@ -11,9 +11,19 @@ import { ProductGateway } from "@/lib/http/ProductGateway";
 
 function buildQueryKey(
 	filters: ProductSearchFilters,
-): readonly ["products", { query?: string; category?: string; supermarket?: string; sortBy?: string; limit?: string }] {
-	const { query, category, supermarket, sortBy, limit } = filters;
-	return ["products", { query, category, supermarket, sortBy, limit }] as const;
+): readonly [
+	"products",
+	{
+		query?: string;
+		category?: string;
+		supermarket?: string;
+		sortBy?: string;
+		limit?: string;
+		postalCode?: string;
+	},
+] {
+	const { query, category, supermarket, sortBy, limit, postalCode } = filters;
+	return ["products", { query, category, supermarket, sortBy, limit, postalCode }] as const;
 }
 
 function fetchPage(
