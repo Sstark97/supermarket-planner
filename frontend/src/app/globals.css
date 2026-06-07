@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+	--color-kilox-matte: #0b0f17;
+	--color-kilox-sapphire: #1d4ed8;
+	--color-kilox-cyan: #06b6d4;
+	--color-kilox-slate: #1e293b;
+}
+
+@utility bg-kilox-gradient {
+	background: linear-gradient(135deg, #1d4ed8 0%, #06b6d4 100%);
+}
