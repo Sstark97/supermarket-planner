@@ -38,4 +38,6 @@ frontend/.pi-lens/
 context.md
 plan.md
 data/
+!backend/prisma/data/
+!backend/prisma/data/spain_zipcodes.json
 docs/

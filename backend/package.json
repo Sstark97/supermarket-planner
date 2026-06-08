@@ -37,6 +37,9 @@
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.24.1"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
     "@types/cors": "^2.8.17",
