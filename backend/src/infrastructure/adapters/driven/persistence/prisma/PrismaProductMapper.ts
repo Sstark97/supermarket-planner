@@ -48,13 +48,13 @@ export interface ProductBaseUpsertPayload {
 }
 
 export interface ProductPriceUpsertPayload {
-	where: { productId_postalCode: { productId: string; postalCode: string } };
+	where: { productId_zoneId: { productId: string; zoneId: string } };
 	update: { price: number; pricePerUnit: number; scrapedAt: Date };
 	create: {
 		price: number;
 		pricePerUnit: number;
 		scrapedAt: Date;
-		postalCode: string;
+		zoneId: string;
 		productId: string;
 	};
 }
@@ -66,20 +66,20 @@ export function parsePrismaProductWithPriceRecord(record: unknown) {
 export function mapPrismaProductWithPriceToDomain(
 	record: PrismaProductWithPriceRecord,
 ): IProduct {
-	const [priceForRequestedPostalCode] = record.prices;
+	const [priceForRequestedZone] = record.prices;
 
 	return {
 		id: record.id,
 		name: record.name,
 		supermarket: record.supermarket,
 		category: record.category,
-		price: priceForRequestedPostalCode.price,
-		pricePerUnit: priceForRequestedPostalCode.pricePerUnit,
+		price: priceForRequestedZone.price,
+		pricePerUnit: priceForRequestedZone.pricePerUnit,
 		unit: record.unit,
 		image: record.image ?? undefined,
 		url: record.url ?? undefined,
 		taxType: record.taxType,
-		scrapedAt: priceForRequestedPostalCode.scrapedAt.toISOString(),
+		scrapedAt: priceForRequestedZone.scrapedAt.toISOString(),
 	};
 }
 
@@ -115,7 +115,7 @@ export function mapDomainProductToBaseUpsertPayload(
 export function mapDomainProductToPriceUpsertPayload(
 	product: IProduct,
 	productId: string,
-	postalCode: string,
+	zoneId: string,
 ): ProductPriceUpsertPayload {
 	const persistedFields = {
 		price: product.price,
@@ -125,15 +125,15 @@ export function mapDomainProductToPriceUpsertPayload(
 
 	return {
 		where: {
-			productId_postalCode: {
+			productId_zoneId: {
 				productId,
-				postalCode,
+				zoneId,
 			},
 		},
 		update: persistedFields,
 		create: {
 			...persistedFields,
-			postalCode,
+			zoneId,
 			productId,
 		},
 	};
