@@ -1,0 +1,21 @@
+{
+  "version": "2026-06-simulated",
+  "country": "ES",
+  "zones": [
+    {
+      "id": "es-lp-gc",
+      "name": "Las Palmas de Gran Canaria",
+      "postalCodes": ["35001", "35002", "35003", "35010", "35011"]
+    },
+    {
+      "id": "es-tf-sctf",
+      "name": "Santa Cruz de Tenerife",
+      "postalCodes": ["38001", "38002", "38003"]
+    },
+    {
+      "id": "es-md-centro",
+      "name": "Madrid Centro",
+      "postalCodes": ["28001", "28004", "28013", "28014"]
+    }
+  ]
+}
