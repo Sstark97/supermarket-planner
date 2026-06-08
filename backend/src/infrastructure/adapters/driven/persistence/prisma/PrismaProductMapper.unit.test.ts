@@ -39,7 +39,7 @@ describe("mapDomainProductToBaseUpsertPayload", () => {
 });
 
 describe("mapDomainProductToPriceUpsertPayload", () => {
-	it("builds a ProductPrice upsert payload keyed by productId and postalCode", () => {
+	it("builds a ProductPrice upsert payload keyed by productId and zoneId", () => {
 		const product = buildProduct({ price: 2.35, pricePerUnit: 2.35 });
 
 		const payload = mapDomainProductToPriceUpsertPayload(
@@ -48,9 +48,9 @@ describe("mapDomainProductToPriceUpsertPayload", () => {
 			"35001",
 		);
 
-		expect(payload.where.productId_postalCode).toEqual({
+		expect(payload.where.productId_zoneId).toEqual({
 			productId: "prisma-product-id",
-			postalCode: "35001",
+			zoneId: "35001",
 		});
 		expect(payload.update.price).toBe(2.35);
 		expect(payload.update.pricePerUnit).toBe(2.35);
@@ -58,7 +58,7 @@ describe("mapDomainProductToPriceUpsertPayload", () => {
 		expect(payload.create).toMatchObject({
 			price: 2.35,
 			pricePerUnit: 2.35,
-			postalCode: "35001",
+			zoneId: "35001",
 			productId: "prisma-product-id",
 		});
 	});
@@ -104,7 +104,7 @@ describe("mapPrismaProductWithPriceToDomain", () => {
 		});
 	});
 
-	it("rejects rows that carry no price for the requested postal code", () => {
+	it("rejects rows that carry no price for the requested zone", () => {
 		const parsedRow = parsePrismaProductWithPriceRecord({
 			id: "product-1",
 			name: "Leche Entera",

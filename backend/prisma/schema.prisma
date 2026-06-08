@@ -7,6 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ZoneOnboardingQueueState {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ZoneOnboardingQueue {
+  id                String                   @id @default(uuid())
+  postalCode        String
+  requestedDay      DateTime
+  state             ZoneOnboardingQueueState @default(PENDING)
+  attempts          Int                      @default(0)
+  requestedByUserId String?
+  errorMessage      String?
+  processedAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@unique([postalCode, requestedDay])
+  @@index([state, requestedDay])
+  @@index([postalCode])
+}
+
 model Product {
   id          String         @id @default(uuid())
   name        String
@@ -25,17 +49,35 @@ model Product {
   @@index([supermarket])
 }
 
+model PricingZone {
+  id          String       @id
+  name        String
+  prices      ProductPrice[]
+  postalCodes PostalCode[]
+
+  @@index([name])
+}
+
+model PostalCode {
+  code   String      @id
+  zoneId String
+  zone   PricingZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+
+  @@index([zoneId])
+}
+
 model ProductPrice {
-  id           String   @id @default(uuid())
+  id           String      @id @default(uuid())
   productId    String
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  postalCode   String
+  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  zoneId       String
+  zone         PricingZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   price        Float
   pricePerUnit Float
-  scrapedAt    DateTime @default(now())
+  scrapedAt    DateTime    @default(now())
 
-  @@unique([productId, postalCode])
-  @@index([postalCode])
+  @@unique([productId, zoneId])
+  @@index([zoneId])
   @@index([productId])
 }
 
