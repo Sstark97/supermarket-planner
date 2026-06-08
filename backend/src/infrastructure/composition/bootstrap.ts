@@ -21,6 +21,7 @@ import { PrismaCategoryCacheRepository } from "@infrastructure/adapters/driven/p
 import { PrismaShoppingSessionRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaShoppingSessionRepository";
 import { PrismaActiveCartRepository } from "@infrastructure/adapters/driven/persistence/prisma/PrismaActiveCartRepository";
 import { InMemoryBackgroundRefreshQueueAdapter } from "@infrastructure/adapters/driven/queue/BackgroundRefreshQueue";
+import { PrismaQueueAdapter } from "@infrastructure/adapters/driven/queue/PrismaQueueAdapter";
 import { AldiScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/AldiScraperAdapter";
 import { CarrefourScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/CarrefourScraperAdapter";
 import { HiperDinoScraperAdapter } from "@infrastructure/adapters/driven/scraping/supermarkets/HiperDinoScraperAdapter";
@@ -30,6 +31,7 @@ import { GeminiAiBatchCategorizer } from "@infrastructure/adapters/driven/ai/Gem
 import { logger } from "@infrastructure/logging/logger";
 import { errorHandler } from "@infrastructure/adapters/driving/http/errorHandler";
 import { config } from "@infrastructure/config";
+import type { QueuePort } from "@domain/ports/QueuePort";
 import type { PlaywrightScraperAdapterBase } from "@infrastructure/adapters/driven/scraping/PlaywrightScraperAdapterBase";
 
 export interface BootstrappedBackendApplication {
@@ -37,6 +39,7 @@ export interface BootstrappedBackendApplication {
 	scrapers: PlaywrightScraperAdapterBase[];
 	scraperCron: ScraperCron;
 	categorizationCron: CategorizationCron;
+	zoneOnboardingQueue: QueuePort;
 }
 
 export class BackendCompositionBootstrap {
@@ -57,6 +60,7 @@ export class BackendCompositionBootstrap {
 			scrapers,
 			logger,
 		);
+		const zoneOnboardingQueue: QueuePort = new PrismaQueueAdapter();
 		const productCatalogRepository = new PrismaProductRepository();
 		const refreshProductsCatalogUseCase = new RefreshProductsCatalogUseCase(
 			triggerManualScrapeUseCase,
@@ -85,12 +89,13 @@ export class BackendCompositionBootstrap {
 			model: config.geminiModel,
 			logger,
 		});
-		const categorizePendingProductsUseCase = new CategorizePendingProductsUseCase({
-			productCatalogRepository,
-			categoryCacheRepository,
-			aiBatchCategorizer,
-			logger,
-		});
+		const categorizePendingProductsUseCase =
+			new CategorizePendingProductsUseCase({
+				productCatalogRepository,
+				categoryCacheRepository,
+				aiBatchCategorizer,
+				logger,
+			});
 		const adminCategorizationController = new AdminCategorizationController(
 			categorizePendingProductsUseCase,
 		);
@@ -198,7 +203,9 @@ export class BackendCompositionBootstrap {
 			scraperCron.runDailyScrape().catch((error) => {
 				logger.error("Manual scrape-all failed:", error);
 			});
-			response.json({ message: "Daily scrape full loop triggered in background." });
+			response.json({
+				message: "Daily scrape full loop triggered in background.",
+			});
 		});
 
 		app.post(
@@ -213,6 +220,7 @@ export class BackendCompositionBootstrap {
 			scrapers,
 			scraperCron,
 			categorizationCron,
+			zoneOnboardingQueue,
 		};
 	}
 }
