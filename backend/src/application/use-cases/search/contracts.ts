@@ -12,6 +12,7 @@ export interface SearchProductsInput {
 
 export interface TriggerManualScrapeInput {
 	query: string;
+	postalCode: string;
 }
 
 export interface RefreshProductsCatalogInput {

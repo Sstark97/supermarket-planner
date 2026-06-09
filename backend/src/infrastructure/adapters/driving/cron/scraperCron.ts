@@ -52,6 +52,7 @@ export class ScraperCron {
 			try {
 				const result = await this.triggerManualScrapeUseCase.execute({
 					query,
+					postalCode: config.postalCode,
 				});
 				const savedProductsCount = await this.productCatalogRepository.save(
 					result.results,
