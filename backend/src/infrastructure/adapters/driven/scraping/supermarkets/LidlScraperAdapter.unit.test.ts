@@ -89,7 +89,7 @@ describe("LidlScraperAdapter", () => {
 		} as unknown as ProductMapper;
 
 		const scraper = new LidlScraperAdapter(mapper);
-		const results = await scraper.search("leche");
+		const results = await scraper.search("leche", "35010");
 
 		expect(mocks.blockUnnecessaryResources).toHaveBeenCalledOnce();
 		expect(mocks.goto).toHaveBeenCalledOnce();

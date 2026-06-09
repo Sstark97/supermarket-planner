@@ -6,14 +6,17 @@ class TestScraper extends PlaywrightScraperAdapterBase {
 	readonly name = "TestScraper";
 
 	constructor(
-		private readonly implementation: (query: string) => Promise<IProduct[]>,
+		private readonly implementation: (
+			query: string,
+			postalCode: string,
+		) => Promise<IProduct[]>,
 		threshold = 2,
 	) {
 		super(threshold);
 	}
 
-	protected async scrape(query: string): Promise<IProduct[]> {
-		return this.implementation(query);
+	protected async scrape(query: string, postalCode: string): Promise<IProduct[]> {
+		return this.implementation(query, postalCode);
 	}
 }
 
@@ -25,13 +28,13 @@ describe("PlaywrightScraperAdapterBase", () => {
 			throw new Error(`boom-${attempts}`);
 		}, 2);
 
-		await expect(scraper.search("milk")).rejects.toThrow("boom-1");
+		await expect(scraper.search("milk", "35010")).rejects.toThrow("boom-1");
 		expect(scraper.isCircuitOpen).toBe(false);
 
-		await expect(scraper.search("milk")).rejects.toThrow("boom-2");
+		await expect(scraper.search("milk", "35010")).rejects.toThrow("boom-2");
 		expect(scraper.isCircuitOpen).toBe(true);
 
-		await expect(scraper.search("milk")).resolves.toEqual([]);
+		await expect(scraper.search("milk", "35010")).resolves.toEqual([]);
 		expect(attempts).toBe(2);
 	});
 
@@ -46,10 +49,22 @@ describe("PlaywrightScraperAdapterBase", () => {
 			return [];
 		}, 2);
 
-		await expect(scraper.search("bread")).rejects.toThrow("failure-1");
-		await expect(scraper.search("bread")).resolves.toEqual([]);
-		await expect(scraper.search("bread")).rejects.toThrow("failure-3");
+		await expect(scraper.search("bread", "35010")).rejects.toThrow("failure-1");
+		await expect(scraper.search("bread", "35010")).resolves.toEqual([]);
+		await expect(scraper.search("bread", "35010")).rejects.toThrow("failure-3");
 
 		expect(scraper.isCircuitOpen).toBe(false);
+	});
+
+	it("propagates the postal code through to scrape()", async () => {
+		const receivedArgs: Array<{ query: string; postalCode: string }> = [];
+		const scraper = new TestScraper(async (query, postalCode) => {
+			receivedArgs.push({ query, postalCode });
+			return [];
+		});
+
+		await scraper.search("eggs", "35001");
+
+		expect(receivedArgs).toEqual([{ query: "eggs", postalCode: "35001" }]);
 	});
 });

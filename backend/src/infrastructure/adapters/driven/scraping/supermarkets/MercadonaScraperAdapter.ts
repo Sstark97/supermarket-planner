@@ -3,7 +3,6 @@ import type {
 	MercadonaDomProduct,
 	MercadonaSearchResponse,
 } from "@application/dto/ScraperPayloads";
-import { config } from "@infrastructure/config/index";
 import {
 	defaultProductMapper,
 	type ProductMapper,
@@ -26,27 +25,15 @@ import { getRandomUserAgent, randomDelay } from "../strategies/StealthHelper";
 export class MercadonaScraperAdapter extends PlaywrightScraperAdapterBase {
 	readonly name = "Mercadona";
 	private readonly productMapper: ProductMapper;
-	private readonly postalCode = config.postalCode; // 35010
 
 	constructor(productMapper: ProductMapper = defaultProductMapper) {
 		super();
 		this.productMapper = productMapper;
 	}
 
-	protected async scrape(query: string): Promise<IProduct[]> {
+	protected async scrape(query: string, postalCode: string): Promise<IProduct[]> {
 		const ua = getRandomUserAgent();
 		const context = await BrowserManager.getInstance().getContext(ua);
-
-		// Inject postal code into localStorage before navigation
-		await context.addInitScript((cp) => {
-			try {
-				localStorage.setItem("postal_code", cp);
-				localStorage.setItem("wh", "3544"); // Specific warehouse for 35010
-			} catch (_) {
-				/* ignore in sandboxed env */
-			}
-		}, this.postalCode);
-
 		const page = await context.newPage();
 		const collectedProducts: IProduct[] = [];
 
@@ -101,9 +88,16 @@ export class MercadonaScraperAdapter extends PlaywrightScraperAdapterBase {
 				'input[placeholder*="postal"], input[name*="postal"], input[id*="postal"]';
 			const hasCpModal = await page.$(cpInputSelector).catch(() => null);
 			if (hasCpModal) {
-				await page.fill(cpInputSelector, this.postalCode);
+				await page.fill(cpInputSelector, postalCode);
 				await page.keyboard.press("Enter");
-				await randomDelay(1500, 3000);
+				// Wait for Mercadona to set postal_code + wh in localStorage before proceeding
+				await page.waitForFunction(
+					() => !!localStorage.getItem("wh"),
+					{ timeout: 5000 },
+				).catch(() => logger.warn("[Mercadona] wh not set after CP modal — warehouse may be unresolved"));
+				await randomDelay(500, 1000);
+			} else {
+				logger.warn(`[Mercadona] CP modal not found for postal code ${postalCode} — warehouse may not be configured`);
 			}
 
 			// Navigate to search
@@ -156,7 +150,16 @@ export class MercadonaScraperAdapter extends PlaywrightScraperAdapterBase {
 								?.textContent?.trim() ?? "",
 						price:
 							card.querySelector('[class*="price"]')?.textContent?.trim() ?? "",
-						image: (card.querySelector("img") as HTMLImageElement)?.src ?? "",
+						image: (() => {
+								const img = card.querySelector("img") as HTMLImageElement | null;
+								if (!img) return "";
+								const candidates = [
+									img.dataset.src,
+									img.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0],
+									img.src,
+								];
+								return candidates.find((s) => s && !s.startsWith("data:")) ?? "";
+							})(),
 						unit:
 							card
 								.querySelector('[class*="unit"], [class*="size"]')

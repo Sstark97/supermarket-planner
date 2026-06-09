@@ -29,7 +29,7 @@ export abstract class PlaywrightScraperAdapterBase
 	/**
 	 * Public entry point. Handles circuit breaker and graceful error degradation.
 	 */
-	async search(query: string): Promise<IProduct[]> {
+	async search(query: string, postalCode: string): Promise<IProduct[]> {
 		if (this.circuitOpen) {
 			logger.warn(`[${this.name}] Circuit is OPEN — skipping scrape.`);
 			return [];
@@ -38,7 +38,7 @@ export abstract class PlaywrightScraperAdapterBase
 		const start = Date.now();
 		try {
 			logger.info(`[${this.name}] Starting scrape for: "${query}"`);
-			const results = await this.scrape(query);
+			const results = await this.scrape(query, postalCode);
 			this.failureCount = 0; // reset on success
 			logger.info(
 				`[${this.name}] Done. ${results.length} results in ${Date.now() - start}ms`,
@@ -86,5 +86,5 @@ export abstract class PlaywrightScraperAdapterBase
 	/**
 	 * Core scraping logic — subclasses implement this.
 	 */
-	protected abstract scrape(query: string): Promise<IProduct[]>;
+	protected abstract scrape(query: string, postalCode: string): Promise<IProduct[]>;
 }

@@ -23,7 +23,7 @@ describe("AldiScraperAdapter", () => {
 
 		const scraper = new AldiScraperAdapter();
 
-		await expect(scraper.search("yogur")).rejects.toThrow(
+		await expect(scraper.search("yogur", "35010")).rejects.toThrow(
 			"Aldi API failed: Service Unavailable",
 		);
 	});
@@ -40,7 +40,7 @@ describe("AldiScraperAdapter", () => {
 		vi.stubGlobal("fetch", fetchMock);
 
 		const scraper = new AldiScraperAdapter();
-		await scraper.search("leche");
+		await scraper.search("leche", "35010");
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -65,7 +65,7 @@ describe("AldiScraperAdapter", () => {
 		vi.stubGlobal("fetch", fetchMock);
 
 		const scraper = new AldiScraperAdapter();
-		const results = await scraper.search("leche");
+		const results = await scraper.search("leche", "35010");
 
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 		const firstBody = JSON.parse(

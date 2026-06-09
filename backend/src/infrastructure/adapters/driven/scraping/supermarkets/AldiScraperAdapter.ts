@@ -94,7 +94,7 @@ export class AldiScraperAdapter extends PlaywrightScraperAdapterBase {
 		return [...(results[0]?.hits || []), ...(results[1]?.hits || [])];
 	}
 
-	protected async scrape(query: string): Promise<IProduct[]> {
+	protected async scrape(query: string, _postalCode: string): Promise<IProduct[]> {
 		logger.info(`[Aldi] Fetching from Algolia API for: "${query}"`);
 
 		try {
