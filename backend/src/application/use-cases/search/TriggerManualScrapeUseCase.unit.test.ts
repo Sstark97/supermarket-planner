@@ -57,12 +57,14 @@ describe("TriggerManualScrapeUseCase.execute", () => {
 		};
 
 		const useCase = new TriggerManualScrapeUseCase([okScraper, failingScraper], silentLogger);
-		const result = await useCase.execute({ query: "milk" });
+		const result = await useCase.execute({ query: "milk", postalCode: "35010" });
 
 		expect(result.results).toHaveLength(1);
 		expect(result.results[0].supermarket).toBe("OKMarket");
 		expect(result.warnings).toEqual(["FailMarket: upstream timeout"]);
 		expect(result.source).toBe("live");
+		expect(okScraper.search).toHaveBeenCalledWith("milk", "35010");
+		expect(failingScraper.search).toHaveBeenCalledWith("milk", "35010");
 	});
 
 	it("formats non-Error rejection reasons safely", async () => {
@@ -79,7 +81,7 @@ describe("TriggerManualScrapeUseCase.execute", () => {
 		};
 
 		const useCase = new TriggerManualScrapeUseCase([failingScraper], silentLogger);
-		const result = await useCase.execute({ query: "rice" });
+		const result = await useCase.execute({ query: "rice", postalCode: "35010" });
 
 		expect(result.results).toEqual([]);
 		expect(result.warnings).toEqual([

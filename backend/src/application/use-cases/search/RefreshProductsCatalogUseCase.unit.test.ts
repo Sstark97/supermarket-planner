@@ -58,6 +58,7 @@ describe("RefreshProductsCatalogUseCase.execute", () => {
 
 		expect(triggerManualScrapeHandler.execute).toHaveBeenCalledWith({
 			query: "leche",
+			postalCode: "35001",
 		});
 		expect(productCatalogRepository.save).toHaveBeenCalledWith(
 			liveResults,

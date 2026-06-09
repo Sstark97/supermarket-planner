@@ -16,6 +16,7 @@ export class RefreshProductsCatalogUseCase {
 		);
 		const liveResult = await this.triggerManualScrapeHandler.execute({
 			query: input.query,
+			postalCode: input.postalCode,
 		});
 		const savedProductsCount = await this.productCatalogRepository.save(
 			liveResult.results,

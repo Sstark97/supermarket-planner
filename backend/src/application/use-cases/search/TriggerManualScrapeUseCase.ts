@@ -12,6 +12,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 
 	async execute(input: TriggerManualScrapeInput): Promise<SearchResult> {
 		const query = input.query;
+		const postalCode = input.postalCode;
 		const scrapedAt = new Date().toISOString();
 		const warnings: string[] = [];
 
@@ -23,7 +24,7 @@ export class TriggerManualScrapeUseCase implements TriggerManualScrapeUseCasePor
 		const scraperTasks = this.scrapers.map(async (scraper) => {
 			const scraperStartedAt = Date.now();
 			try {
-				const results = await scraper.search(query);
+				const results = await scraper.search(query, postalCode);
 				this.logger.info(
 					`[TriggerManualScrapeUseCase] ${scraper.name} completed: ${results.length} results in ${Date.now() - scraperStartedAt}ms`,
 				);

@@ -1,5 +1,6 @@
 import cors from "cors";
 import express, { type Express } from "express";
+import { z } from "zod";
 import { RefreshProductsCatalogUseCase } from "@application/use-cases/search/RefreshProductsCatalogUseCase";
 import { SearchProductsUseCase } from "@application/use-cases/search/SearchProductsUseCase";
 import { TriggerManualScrapeUseCase } from "@application/use-cases/search/TriggerManualScrapeUseCase";
@@ -33,6 +34,10 @@ import { errorHandler } from "@infrastructure/adapters/driving/http/errorHandler
 import { config } from "@infrastructure/config";
 import type { QueuePort } from "@domain/ports/QueuePort";
 import type { PlaywrightScraperAdapterBase } from "@infrastructure/adapters/driven/scraping/PlaywrightScraperAdapterBase";
+
+const adminScrapeBodySchema = z.object({
+	postalCode: z.string().min(1).optional(),
+});
 
 export interface BootstrappedBackendApplication {
 	app: Express;
@@ -181,11 +186,15 @@ export class BackendCompositionBootstrap {
 		app.post("/admin/scrape/:query", async (request, response) => {
 			try {
 				const query = request.params.query;
-				logger.info(`Manual scrape triggered for: ${query}`);
-				const result = await triggerManualScrapeUseCase.execute({ query });
+				const parsedBody = adminScrapeBodySchema.safeParse(request.body);
+				const postalCode = parsedBody.success
+					? (parsedBody.data.postalCode ?? config.postalCode)
+					: config.postalCode;
+				logger.info(`Manual scrape triggered for: ${query} (postalCode: ${postalCode})`);
+				const result = await triggerManualScrapeUseCase.execute({ query, postalCode });
 				const savedProductsCount = await productCatalogRepository.save(
 					result.results,
-					config.postalCode,
+					postalCode,
 				);
 
 				response.json({

@@ -9,7 +9,7 @@ export interface CircuitBreakerStatus {
 
 export interface SupermarketSearchPort {
 	readonly name: string;
-	search(query: string): Promise<IProduct[]>;
+	search(query: string, postalCode: string): Promise<IProduct[]>;
 	readonly isCircuitOpen: boolean;
 	getCircuitBreakerStatus(): CircuitBreakerStatus;
 }
