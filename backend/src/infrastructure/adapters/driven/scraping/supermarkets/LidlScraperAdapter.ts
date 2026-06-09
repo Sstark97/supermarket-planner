@@ -24,7 +24,7 @@ export class LidlScraperAdapter extends PlaywrightScraperAdapterBase {
 		this.productMapper = productMapper;
 	}
 
-	protected async scrape(query: string): Promise<IProduct[]> {
+	protected async scrape(query: string, _postalCode: string): Promise<IProduct[]> {
 		const ua = getRandomUserAgent();
 		const context = await BrowserManager.getInstance().getContext(ua);
 		const page = await context.newPage();

@@ -67,12 +67,36 @@ describe("CarrefourScraperAdapter", () => {
 
 		const scraper = new CarrefourScraperAdapter();
 
-		await expect(scraper.search("leche")).rejects.toThrow("captcha detected");
+		await expect(scraper.search("leche", "35010")).rejects.toThrow(
+			"captcha detected",
+		);
 		expect(goto).toHaveBeenCalledTimes(2);
 		expect(addCookies).toHaveBeenCalledOnce();
+		expect(addCookies).toHaveBeenCalledWith([
+			expect.objectContaining({
+				name: "salepoint",
+				value: "0000GC||35010|A_DOMICILIO|1",
+			}),
+		]);
 		expect(closePage).toHaveBeenCalledOnce();
 		expect(closeContext).toHaveBeenCalledOnce();
 		expect(fsMocks.mkdir).not.toHaveBeenCalled();
+	});
+
+	it("builds the salepoint cookie dynamically from the given postal code", async () => {
+		waitForResponse.mockRejectedValueOnce(new Error("captcha detected"));
+
+		const scraper = new CarrefourScraperAdapter();
+
+		await expect(scraper.search("leche", "35100")).rejects.toThrow(
+			"captcha detected",
+		);
+		expect(addCookies).toHaveBeenCalledWith([
+			expect.objectContaining({
+				name: "salepoint",
+				value: "0000GC||35100|A_DOMICILIO|1",
+			}),
+		]);
 	});
 
 	it("captures screenshot and html when timeout-like failures happen", async () => {
@@ -82,7 +106,7 @@ describe("CarrefourScraperAdapter", () => {
 
 		const scraper = new CarrefourScraperAdapter();
 
-		await expect(scraper.search("leche")).rejects.toThrow(
+		await expect(scraper.search("leche", "35010")).rejects.toThrow(
 			"Timeout 15000ms exceeded",
 		);
 		expect(fsMocks.mkdir).toHaveBeenCalledOnce();
@@ -96,7 +120,9 @@ describe("CarrefourScraperAdapter", () => {
 
 		const scraper = new CarrefourScraperAdapter();
 
-		await expect(scraper.search("leche")).rejects.toThrow("captcha detected");
+		await expect(scraper.search("leche", "35010")).rejects.toThrow(
+			"captcha detected",
+		);
 		expect(addCookies).toHaveBeenCalledOnce();
 		expect(goto).toHaveBeenCalledTimes(2);
 		expect(fsMocks.mkdir).not.toHaveBeenCalled();

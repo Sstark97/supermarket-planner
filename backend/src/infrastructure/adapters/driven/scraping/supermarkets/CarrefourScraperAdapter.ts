@@ -28,13 +28,13 @@ export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 		this.productMapper = productMapper;
 	}
 
-	protected async scrape(query: string): Promise<IProduct[]> {
+	protected async scrape(query: string, postalCode: string): Promise<IProduct[]> {
 		const ua = getRandomUserAgent();
 		const context = await BrowserManager.getInstance().getContext(ua);
 		const page = await context.newPage();
 
 		try {
-			await this.navigateLikeHuman(page, context, query);
+			await this.navigateLikeHuman(page, context, query, postalCode);
 
 			logger.info("[Carrefour] Waiting for API response...");
 			const response = await page.waitForResponse(
@@ -88,6 +88,7 @@ export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 		page: Page,
 		context: BrowserContext,
 		query: string,
+		postalCode: string,
 	): Promise<void> {
 		const homeUrl = "https://www.carrefour.es/supermercado";
 		const searchUrl = `https://www.carrefour.es/supermercado?query=${encodeURIComponent(query)}`;
@@ -103,7 +104,7 @@ export class CarrefourScraperAdapter extends PlaywrightScraperAdapterBase {
 		await context.addCookies([
 			{
 				name: "salepoint",
-				value: "0000GC||35010|A_DOMICILIO|1",
+				value: `0000GC||${postalCode}|A_DOMICILIO|1`,
 				domain: ".carrefour.es",
 				path: "/",
 			},

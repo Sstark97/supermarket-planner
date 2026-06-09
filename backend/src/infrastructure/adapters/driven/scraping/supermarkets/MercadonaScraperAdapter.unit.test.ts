@@ -12,6 +12,7 @@ const route = vi.fn();
 const goto = vi.fn().mockResolvedValue(undefined);
 const waitForResponse = vi.fn();
 const waitForSelector = vi.fn().mockResolvedValue(undefined);
+const waitForFunction = vi.fn().mockResolvedValue(undefined);
 const evaluate = vi.fn().mockResolvedValue([]);
 const dollar = vi.fn().mockResolvedValue(null);
 const fill = vi.fn().mockResolvedValue(undefined);
@@ -39,6 +40,7 @@ vi.mock("../strategies/BrowserManager", () => ({
 					fill,
 					keyboard: { press: keyboardPress },
 					waitForSelector,
+					waitForFunction,
 					evaluate,
 					close: closePage,
 				}),
@@ -62,6 +64,7 @@ describe("MercadonaScraperAdapter", () => {
 		dollar.mockResolvedValue(null);
 		fill.mockResolvedValue(undefined);
 		keyboardPress.mockResolvedValue(undefined);
+		waitForFunction.mockResolvedValue(undefined);
 	});
 
 	it("uses intercepted API results when available", async () => {
@@ -107,13 +110,45 @@ describe("MercadonaScraperAdapter", () => {
 		});
 
 		const scraper = new MercadonaScraperAdapter(mapper);
-		const results = await scraper.search("leche");
+		const results = await scraper.search("leche", "35001");
 
-		expect(addInitScript).toHaveBeenCalledOnce();
+		expect(addInitScript).not.toHaveBeenCalled();
 		expect(results).toHaveLength(1);
 		expect(results[0].supermarket).toBe("Mercadona");
 		expect(mapper.toDomain).toHaveBeenCalledOnce();
 		expect(waitForSelector).not.toHaveBeenCalled();
+	});
+
+	it("injects the dynamic postal code and fills the CP modal when present", async () => {
+		const mapper = {
+			toDomain: vi.fn(
+				(input) =>
+					({
+						id: "mercadona-3",
+						name: input.name,
+						supermarket: input.supermarket,
+						category: input.category,
+						price: 1,
+						pricePerUnit: 1,
+						unit: "ud",
+						image: input.image,
+						url: input.url,
+						taxType: "IGIC",
+						scrapedAt: new Date().toISOString(),
+					}) satisfies IProduct,
+			),
+		} as unknown as ProductMapper;
+
+		dollar.mockResolvedValueOnce({});
+		waitForResponse.mockResolvedValueOnce({ status: () => 200 });
+
+		const scraper = new MercadonaScraperAdapter(mapper);
+		await scraper.search("agua", "35100");
+
+		expect(addInitScript).not.toHaveBeenCalled();
+		expect(fill).toHaveBeenCalledWith(expect.any(String), "35100");
+		expect(keyboardPress).toHaveBeenCalledWith("Enter");
+		expect(waitForFunction).toHaveBeenCalledOnce();
 	});
 
 	it("falls back to DOM parsing when API intercept does not resolve", async () => {
@@ -148,7 +183,7 @@ describe("MercadonaScraperAdapter", () => {
 		]);
 
 		const scraper = new MercadonaScraperAdapter(mapper);
-		const results = await scraper.search("papas");
+		const results = await scraper.search("papas", "35010");
 
 		expect(waitForSelector).toHaveBeenCalledOnce();
 		expect(results).toHaveLength(1);
