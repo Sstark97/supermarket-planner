@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/api/SupermarketPlanner.Api.csproj" />
+    <Project Path="src/worker/SupermarketPlanner.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/api/SupermarketPlanner.Api.Tests.csproj" />
+    <Project Path="tests/worker/SupermarketPlanner.Worker.Tests.csproj" />
+  </Folder>
+</Solution>
