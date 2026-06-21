@@ -47,5 +47,6 @@ backend-dotnet/**/bin
 backend-dotnet/**/obj
 backend-dotnet/**/appsettings.secret.json
 backend-dotnet/.idea/
+backend-dotnet/**/*.DotSettings.user
 
 .codegraph/
