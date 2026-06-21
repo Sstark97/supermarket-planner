@@ -41,3 +41,11 @@ data/
 !backend/prisma/data/
 !backend/prisma/data/spain_zipcodes.json
 docs/
+
+# .NET
+backend-dotnet/**/bin
+backend-dotnet/**/obj
+backend-dotnet/**/appsettings.secret.json
+backend-dotnet/.idea/
+
+.codegraph/
