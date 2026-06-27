@@ -45,7 +45,7 @@ public sealed class SupermarketPlannerDbContext(DbContextOptions<SupermarketPlan
 
     private void StampUpdatedAt()
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         foreach (var entry in ChangeTracker.Entries<ZoneOnboardingQueueEntity>())
         {
