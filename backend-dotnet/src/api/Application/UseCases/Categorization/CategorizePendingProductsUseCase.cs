@@ -13,11 +13,12 @@ public sealed class CategorizePendingProductsUseCase(
     IBatchCategorizer batchCategorizer,
     ILogger<CategorizePendingProductsUseCase> logger)
 {
-    public Task<Either<DomainError, CategorizePendingProductsResult>> Invoke(
-        CancellationToken cancellationToken) =>
-        productCatalogRepository
-            .FindByCategory(nameof(ProductCategory.Other), cancellationToken)
-            .BindAsync(pending => CategorizePending(pending, cancellationToken));
+    public async Task<Either<DomainError, CategorizePendingProductsResult>> Invoke(
+        CancellationToken cancellationToken)
+    {
+        var pending = await productCatalogRepository.FindByCategory(nameof(ProductCategory.Other), cancellationToken);
+        return await CategorizePending(pending, cancellationToken);
+    }
 
     private Task<Either<DomainError, CategorizePendingProductsResult>> CategorizePending(
         IReadOnlyList<ProductDto> pending,

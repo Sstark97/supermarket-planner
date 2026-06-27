@@ -19,7 +19,7 @@ public sealed class MergeCartUseCaseShould
     {
         repository = Substitute.For<IActiveCartRepository>();
         repository.FindByUserId(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, ActiveCartEntity?>.FromRight(null));
+            .Returns(Option<ActiveCartEntity>.None);
         repository.Upsert(Arg.Any<ActiveCartEntity>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Either<DomainError, ActiveCartEntity>.FromRight(callInfo.Arg<ActiveCartEntity>()));
 
@@ -57,7 +57,7 @@ public sealed class MergeCartUseCaseShould
     public async Task GenerateNewUuidForCartIdWhenNoExistingCartIsFound()
     {
         repository.FindByUserId(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, ActiveCartEntity?>.FromRight(null));
+            .Returns(Option<ActiveCartEntity>.None);
 
         await useCase.Invoke(MakeValidInput(), CancellationToken.None);
 
@@ -74,7 +74,7 @@ public sealed class MergeCartUseCaseShould
     {
         var existingCart = new ActiveCartBuilder().WithId("existing-cart-id").Build();
         repository.FindByUserId(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, ActiveCartEntity?>.FromRight(existingCart));
+            .Returns(Option<ActiveCartEntity>.Some(existingCart));
 
         await useCase.Invoke(MakeValidInput(), CancellationToken.None);
 
@@ -96,7 +96,7 @@ public sealed class MergeCartUseCaseShould
             ])
             .Build();
         repository.FindByUserId(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, ActiveCartEntity?>.FromRight(existingCart));
+            .Returns(Option<ActiveCartEntity>.Some(existingCart));
 
         var input = MakeValidInput(items: [
             new MergeCartItemInput("prod-1", "Leche Entera", "mercadona", "dairy", 1.05, 1.05, "l", "IGIC", 2, null, null)
@@ -139,7 +139,7 @@ public sealed class MergeCartUseCaseShould
             .WithItems([new ActiveCartItemBuilder().Named("Leche Entera").WithQuantity(3).Build()])
             .Build();
         repository.FindByUserId(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, ActiveCartEntity?>.FromRight(existingCart));
+            .Returns(Option<ActiveCartEntity>.Some(existingCart));
 
         var input = MakeValidInput(items: []);
 

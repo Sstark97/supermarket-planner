@@ -35,7 +35,7 @@ public interface IShoppingSessionRepository
         ShoppingSessionEntity sessionEntity,
         CancellationToken cancellationToken);
 
-    Task<Either<DomainError, IReadOnlyList<ShoppingSessionEntity>>> FindByUserId(
+    Task<IReadOnlyList<ShoppingSessionEntity>> FindByUserId(
         string userId,
         CancellationToken cancellationToken);
 

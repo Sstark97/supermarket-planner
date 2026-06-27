@@ -100,7 +100,7 @@ public sealed class ProductCategorizationUseCaseShould
     {
         var cache = Substitute.For<ICategoryCacheRepository>();
         cache.FindByNormalizedName("gambas congeladas", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, string?>.FromRight((string?)"Frozen")));
+            .Returns(Option<string>.Some("Frozen"));
 
         var keywordCategorizer = Substitute.For<IKeywordCategorizer>();
         var aiCategorizer = Substitute.For<IAiCategorizer>();
@@ -119,7 +119,7 @@ public sealed class ProductCategorizationUseCaseShould
     {
         var cache = Substitute.For<ICategoryCacheRepository>();
         cache.FindByNormalizedName("leche entera", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, string?>.FromRight((string?)"Dairy")));
+            .Returns(Option<string>.Some("Dairy"));
 
         var keywordCategorizer = Substitute.For<IKeywordCategorizer>();
         var useCase = new ProductCategorizationUseCase(keywordCategorizer, null, cache, null, new ProductCategorizationOptions(1500));
@@ -134,7 +134,7 @@ public sealed class ProductCategorizationUseCaseShould
     {
         var cache = Substitute.For<ICategoryCacheRepository>();
         cache.FindByNormalizedName(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, string?>.FromRight((string?)null)));
+            .Returns(Option<string>.None);
         cache.UpsertMany(Arg.Any<IReadOnlyList<CategoryCacheEntry>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Either<DomainError, Unit>.FromRight(Unit.Value)));
 
@@ -157,7 +157,7 @@ public sealed class ProductCategorizationUseCaseShould
     {
         var cache = Substitute.For<ICategoryCacheRepository>();
         cache.FindByNormalizedName(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, string?>.FromRight((string?)null)));
+            .Returns(Option<string>.None);
         cache.UpsertMany(Arg.Any<IReadOnlyList<CategoryCacheEntry>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Either<DomainError, Unit>.FromRight(Unit.Value)));
 
@@ -184,8 +184,7 @@ public sealed class ProductCategorizationUseCaseShould
     {
         var cache = Substitute.For<ICategoryCacheRepository>();
         cache.FindByNormalizedName(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, string?>.FromLeft(
-                new DomainError("CACHE_ERROR", "DB connection lost"))));
+            .Returns<Task<Option<string>>>(_ => throw new InvalidOperationException("DB connection lost"));
         cache.UpsertMany(Arg.Any<IReadOnlyList<CategoryCacheEntry>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Either<DomainError, Unit>.FromRight(Unit.Value)));
 

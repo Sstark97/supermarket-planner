@@ -24,7 +24,7 @@ public sealed class GetShoppingSessionsUseCaseShould
 
         var repository = Substitute.For<IShoppingSessionRepository>();
         repository.FindByUserId("user-1", Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, IReadOnlyList<ShoppingSessionEntity>>.FromRight([session]));
+            .Returns((IReadOnlyList<ShoppingSessionEntity>)[session]);
 
         var useCase = new GetShoppingSessionsUseCase(
             repository,

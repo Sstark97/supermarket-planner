@@ -17,7 +17,7 @@ public sealed record NormalizedNameCategoryUpdate(
 
 public interface IProductCatalogRepository
 {
-    Task<Either<DomainError, IReadOnlyList<ProductDto>>> Find(
+    Task<IReadOnlyList<ProductDto>> Find(
         ProductCatalogFilters filters,
         CancellationToken cancellationToken);
 
@@ -26,7 +26,7 @@ public interface IProductCatalogRepository
         string postalCode,
         CancellationToken cancellationToken);
 
-    Task<Either<DomainError, IReadOnlyList<ProductDto>>> FindByCategory(
+    Task<IReadOnlyList<ProductDto>> FindByCategory(
         string category,
         CancellationToken cancellationToken);
 

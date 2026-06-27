@@ -28,7 +28,7 @@ public sealed class CategorizePendingProductsUseCaseShould
     {
         var repository = Substitute.For<IProductCatalogRepository>();
         repository.FindByCategory("Other", Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, IReadOnlyList<ProductDto>>.FromRight(pendingProducts));
+            .Returns((IReadOnlyList<ProductDto>)pendingProducts);
         repository.UpdateCategoryByNormalizedNames(Arg.Any<IReadOnlyList<NormalizedNameCategoryUpdate>>(), Arg.Any<CancellationToken>())
             .Returns(Either<DomainError, int>.FromRight(updateCount ?? pendingProducts.Count));
 

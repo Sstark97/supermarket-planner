@@ -6,7 +6,7 @@ namespace SupermarketPlanner.Api.Application.Ports.Driven;
 
 public interface IActiveCartRepository
 {
-    Task<Either<DomainError, ActiveCartEntity?>> FindByUserId(
+    Task<Option<ActiveCartEntity>> FindByUserId(
         string userId,
         CancellationToken cancellationToken);
 

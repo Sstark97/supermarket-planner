@@ -12,12 +12,13 @@ public sealed class CachingBatchCategorizer(
     ILogger<CachingBatchCategorizer> logger,
     BatchCategorizationOptions options) : IBatchCategorizer
 {
-    public Task<Either<DomainError, BatchCategorizationResult>> Categorize(
+    public async Task<Either<DomainError, BatchCategorizationResult>> Categorize(
         IReadOnlyList<string> normalizedNames,
-        CancellationToken cancellationToken) =>
-        categoryCacheRepository
-            .FindByNormalizedNames(normalizedNames, cancellationToken)
-            .BindAsync(cached => RunWithCache(normalizedNames, cached, cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        var cached = await categoryCacheRepository.FindByNormalizedNames(normalizedNames, cancellationToken);
+        return await RunWithCache(normalizedNames, cached, cancellationToken);
+    }
 
     private async Task<Either<DomainError, BatchCategorizationResult>> RunWithCache(
         IReadOnlyList<string> normalizedNames,

@@ -11,7 +11,7 @@ public sealed class GetShoppingSessionsUseCase(
     IShoppingSessionRepository shoppingSessionRepository,
     ILogger<GetShoppingSessionsUseCase> logger) : IGetShoppingSessionsUseCase
 {
-    public Task<Either<DomainError, GetShoppingSessionsResult>> Invoke(
+    public async Task<Either<DomainError, GetShoppingSessionsResult>> Invoke(
         GetShoppingSessionsInput input,
         CancellationToken cancellationToken)
     {
@@ -19,9 +19,9 @@ public sealed class GetShoppingSessionsUseCase(
             "[GetShoppingSessionsUseCase] Invoke - userId: \"{UserId}\"",
             input.UserId);
 
-        return shoppingSessionRepository.FindByUserId(input.UserId, cancellationToken)
-            .MapAsync(sessions => new GetShoppingSessionsResult(
-                sessions.Select(MapSession).ToList()));
+        var sessions = await shoppingSessionRepository.FindByUserId(input.UserId, cancellationToken);
+        return Either<DomainError, GetShoppingSessionsResult>.FromRight(
+            new GetShoppingSessionsResult(sessions.Select(MapSession).ToList()));
     }
 
     private static ShoppingSessionHistoryEntry MapSession(ShoppingSessionEntity session) =>

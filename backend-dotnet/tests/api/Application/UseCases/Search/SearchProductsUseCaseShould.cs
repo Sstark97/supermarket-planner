@@ -39,7 +39,7 @@ public sealed class SearchProductsUseCaseShould
     private void SetupRepository(params ProductDto[] products)
     {
         repository.Find(Arg.Any<ProductCatalogFilters>(), Arg.Any<CancellationToken>())
-            .Returns(Either<DomainError, IReadOnlyList<ProductDto>>.FromRight(products));
+            .Returns((IReadOnlyList<ProductDto>)products);
     }
 
     [Test]

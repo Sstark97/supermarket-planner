@@ -73,16 +73,18 @@ public sealed class ProductCategorizationUseCase(
         if (categoryCache is null)
             return null;
 
-        return (await categoryCache.FindByNormalizedName(normalizedName, cancellationToken))
-            .Match(
-                onLeft: error =>
-                {
-                    logger?.LogWarning(
-                        "[ProductCategorizationUseCase] Cache lookup failed, falling through: {Error}",
-                        error.Message);
-                    return null;
-                },
-                onRight: category => category);
+        try
+        {
+            var result = await categoryCache.FindByNormalizedName(normalizedName, cancellationToken);
+            return result.Match<string?>(onSome: category => category, onNone: () => null);
+        }
+        catch (Exception exception)
+        {
+            logger?.LogWarning(
+                "[ProductCategorizationUseCase] Cache lookup failed, falling through: {Error}",
+                exception.Message);
+            return null;
+        }
     }
 
     private async Task WriteThroughToCache(string normalizedName, string category, CancellationToken cancellationToken)

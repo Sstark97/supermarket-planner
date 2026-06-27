@@ -11,7 +11,7 @@ public sealed class MergeCartUseCase(
     IActiveCartRepository activeCartRepository,
     ILogger<MergeCartUseCase> logger) : IMergeCartUseCase
 {
-    public Task<Either<DomainError, MergeCartResult>> Invoke(
+    public async Task<Either<DomainError, MergeCartResult>> Invoke(
         MergeCartInput input,
         CancellationToken cancellationToken)
     {
@@ -19,21 +19,21 @@ public sealed class MergeCartUseCase(
             "[MergeCartUseCase] Invoke - userId: \"{UserId}\", incomingItems: {Count}",
             input.UserId, input.Items.Count);
 
-        return activeCartRepository.FindByUserId(input.UserId, cancellationToken)
-            .BindAsync(existingCart => MergeAndUpsert(input, existingCart, cancellationToken));
+        var existingCart = await activeCartRepository.FindByUserId(input.UserId, cancellationToken);
+        return await MergeAndUpsert(input, existingCart, cancellationToken);
     }
 
     private Task<Either<DomainError, MergeCartResult>> MergeAndUpsert(
         MergeCartInput input,
-        ActiveCartEntity? existingCart,
+        Option<ActiveCartEntity> existingCart,
         CancellationToken cancellationToken)
     {
-        var existingItems = existingCart?.Items ?? [];
+        var existingItems = existingCart.Match(onSome: cart => cart.Items, onNone: () => []);
         var incomingItems = input.Items.Select(ToActiveCartItem).ToList();
         var mergedItems = ActiveCartMerger.Merge(existingItems, incomingItems);
 
         var cartToUpsert = ActiveCartEntity.Create(
-            id: existingCart?.Id ?? Guid.NewGuid().ToString(),
+            id: existingCart.Match(onSome: cart => cart.Id, onNone: () => Guid.NewGuid().ToString()),
             userId: input.UserId,
             updatedAt: DateTimeOffset.UtcNow,
             items: mergedItems);

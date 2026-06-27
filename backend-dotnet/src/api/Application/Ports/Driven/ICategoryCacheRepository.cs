@@ -9,11 +9,11 @@ public sealed record CategoryCacheEntry(
 
 public interface ICategoryCacheRepository
 {
-    Task<Either<DomainError, string?>> FindByNormalizedName(
+    Task<Option<string>> FindByNormalizedName(
         string normalizedName,
         CancellationToken cancellationToken);
 
-    Task<Either<DomainError, IReadOnlyDictionary<string, string>>> FindByNormalizedNames(
+    Task<IReadOnlyDictionary<string, string>> FindByNormalizedNames(
         IReadOnlyList<string> normalizedNames,
         CancellationToken cancellationToken);
 

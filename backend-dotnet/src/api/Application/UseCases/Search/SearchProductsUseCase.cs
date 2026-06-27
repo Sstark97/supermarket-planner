@@ -20,7 +20,7 @@ public sealed class SearchProductsUseCase(
     private const string DefaultSource = "database";
     private const string PriceDesc = "price_desc";
 
-    public Task<Either<DomainError, SearchResult>> Invoke(
+    public async Task<Either<DomainError, SearchResult>> Invoke(
         SearchProductsInput input,
         CancellationToken cancellationToken)
     {
@@ -31,10 +31,10 @@ public sealed class SearchProductsUseCase(
         var normalizedQuery = input.Query?.Trim() ?? string.Empty;
         var effectivePostalCode = input.PostalCode ?? PostalCode.Default.AsString();
         var productCatalogFilters = new ProductCatalogFilters(normalizedQuery, input.Category, input.Supermarket, effectivePostalCode, 500);
-        
-        return productCatalogRepository
-            .Find(productCatalogFilters, cancellationToken)
-            .MapAsync(catalogProducts => BuildSearchResult(normalizedQuery, effectivePostalCode, catalogProducts, input));
+
+        var catalogProducts = await productCatalogRepository.Find(productCatalogFilters, cancellationToken);
+        return Either<DomainError, SearchResult>.FromRight(
+            BuildSearchResult(normalizedQuery, effectivePostalCode, catalogProducts, input));
     }
 
     private SearchResult BuildSearchResult(

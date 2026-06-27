@@ -22,8 +22,7 @@ public sealed class CachingBatchCategorizerShould
         var cache = Substitute.For<ICategoryCacheRepository>();
         var cachedMap = (cachedNames ?? new Dictionary<string, string>()).ToDictionary();
         cache.FindByNormalizedNames(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Either<DomainError, IReadOnlyDictionary<string, string>>.FromRight(
-                (IReadOnlyDictionary<string, string>)cachedMap)));
+            .Returns((IReadOnlyDictionary<string, string>)cachedMap);
         cache.UpsertMany(Arg.Any<IReadOnlyList<CategoryCacheEntry>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Either<DomainError, Unit>.FromRight(Unit.Value)));
 
